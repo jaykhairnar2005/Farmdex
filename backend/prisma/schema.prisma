@@ -1,0 +1,20 @@
+// FarmDex Prisma Schema Configuration
+// Note: Domain models will be designed and migrated in subsequent phases.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Initial system verification model for testing database connectivity and migrations
+model SystemHealthCheck {
+  id        String   @id @default(uuid())
+  status    String   @default("OK")
+  timestamp DateTime @default(now())
+
+  @@map("system_health_checks")
+}
