@@ -1,5 +1,5 @@
 // FarmDex Production-Quality Prisma Schema
-// Milestone 2A Database Domain Layer
+// Milestone 2A Database Domain Layer (Refined Integrity Policies)
 
 generator client {
   provider = "prisma-client-js"
@@ -120,19 +120,19 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  farmerProfile           FarmerProfile?
-  buyerProfile            BuyerProfile?
-  offers                  Offer[]
-  bids                    Bid[]
-  buyerOrders             Order[]                  @relation("BuyerOrders")
-  farmerOrders            Order[]                  @relation("FarmerOrders")
+  farmerProfile            FarmerProfile?
+  buyerProfile             BuyerProfile?
+  offers                   Offer[]
+  bids                     Bid[]
+  buyerOrders              Order[]                  @relation("BuyerOrders")
+  farmerOrders             Order[]                  @relation("FarmerOrders")
   conversationParticipants ConversationParticipant[]
-  sentMessages            Message[]
-  notifications           Notification[]
-  givenReviews            Review[]                 @relation("GivenReviews")
-  receivedReviews         Review[]                 @relation("ReceivedReviews")
-  wishlists               Wishlist[]
-  complaints              Complaint[]
+  sentMessages             Message[]
+  notifications            Notification[]
+  givenReviews             Review[]                 @relation("GivenReviews")
+  receivedReviews          Review[]                 @relation("ReceivedReviews")
+  wishlists                Wishlist[]
+  complaints               Complaint[]
 
   @@index([email])
   @@index([role])
@@ -431,7 +431,7 @@ model ConversationParticipant {
 model Message {
   id             String       @id @default(uuid())
   conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Restrict)
   senderId       String
   sender         User         @relation(fields: [senderId], references: [id], onDelete: Restrict)
   content        String

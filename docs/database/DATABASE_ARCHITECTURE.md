@@ -12,7 +12,7 @@ Key design principles:
 - **UUID Primary Keys**: Every primary entity uses database-generated UUID v4 strings (`@id @default(uuid())`).
 - **Fixed-Point Currency & Precision**: Floating-point types are strictly forbidden for monetary and agricultural quantity data to avoid rounding errors.
 - **Enforced Enums**: Controlled finite sets (roles, statuses, types) are enforced via PostgreSQL native `ENUM` types.
-- **Historical Immutability**: Historical financial records (`Order`, `OrderItem`, `Payment`, `Delivery`, `Review`, `Message`) use `onDelete: Restrict` or `onDelete: SetNull` to prevent cascading deletion.
+- **Historical Immutability**: Historical financial and communication records (`Order`, `OrderItem`, `Payment`, `Delivery`, `Review`, `Message`) use `onDelete: Restrict` or `onDelete: SetNull` to prevent cascading deletion.
 
 ---
 
@@ -60,13 +60,13 @@ Key design principles:
 ### E. Communication & Notification Domain
 - `conversations`: Chat container between buyer and farmer.
 - `conversation_participants`: Join table (`@@unique([conversationId, userId])`).
-- `messages`: Immutable chat history stored permanently in PostgreSQL (`conversationId`, `senderId`, `content`, `isRead`).
+- `messages`: Immutable chat history stored permanently in PostgreSQL (`conversationId`, `senderId`, `content`, `isRead`). Uses `onDelete: Restrict` on `conversationId` to prevent silent cascade-deletion of historical message logs.
 - `notifications`: User alert queue (`userId`, `type`, `title`, `message`, `isRead`).
 
 ### F. Reviews, Wishlist & Complaints Domain
-- `reviews`: Order review rating (1 to 5) and comment (`@@unique([orderId, reviewerId])`).
+- `reviews`: Order review rating (1 to 5) and comment (`@@unique([orderId, reviewerId])`). Enforces SQL `CHECK (rating >= 1 AND rating <= 5)`.
 - `wishlists`: Buyer saved listings (`@@unique([buyerId, listingId])`).
-- `complaints`: User report referencing `CropListing` or `Order` with reason, description, status, and admin response.
+- `complaints`: User report referencing `CropListing` or `Order` with reason, description, status, and admin response. Enforces SQL `CHECK ("listingId" IS NOT NULL OR "orderId" IS NOT NULL)`.
 
 ### G. External Agricultural & Weather Domain
 - `market_prices`: External mandi price logs (`cropName`, `marketName`, `location`, `price`, `source`, `recordedAt`).
@@ -79,24 +79,31 @@ Key design principles:
 | Parent Entity | Child Entity | Policy (`onDelete`) | Rationale |
 | :--- | :--- | :--- | :--- |
 | `User` | `FarmerProfile` / `BuyerProfile` | `Cascade` | Profile extensions have no meaning without parent identity. |
-| `User` | `Order` / `Offer` / `Message` | `Restrict` | Retains financial, negotiation, and audit trail records. |
+| `User` | `Order` / `Offer` / `Message` | `Restrict` | Retains financial, negotiation, and communication audit trails. |
 | `FarmerProfile` | `CropListing` | `Restrict` | Prevents deleting a profile that has active or past listing history. |
 | `CropListing` | `OrderItem` | `Restrict` | Historical orders must maintain foreign key integrity to original listings. |
 | `CropListing` | `ProductImage` | `Cascade` | Deleting an unreferenced listing purges associated image metadata. |
 | `Auction` | `Bid` | `Cascade` | Purges bids if an unstarted auction is removed. |
 | `Order` | `Payment` / `Delivery` | `Restrict` | Payment & shipping logs cannot be orphaned. |
-| `Conversation` | `Message` | `Cascade` | Deleting a conversation purges its message history. |
+| `Conversation` | `Message` | `Restrict` | Conversation removal cannot silently delete historical message logs. |
 
 ---
 
-## 💰 5. Numeric Precision & Quantity Handling
+## 🔒 5. Database Check Constraints
+
+1. **Review Rating Range**: `CHECK (rating >= 1 AND rating <= 5)`
+2. **Complaint Target Requirement**: `CHECK ("listingId" IS NOT NULL OR "orderId" IS NOT NULL)`
+
+---
+
+## 💰 6. Numeric Precision & Quantity Handling
 
 - **Monetary Values**: Mapped to `@db.Decimal(12, 2)` (up to `9,999,999,999.99` with 2 decimal places). Applies to `pricePerUnit`, `offeredPrice`, `startPrice`, `currentPrice`, `minimumIncrement`, `amount`, `totalAmount`, `subtotal`, and `price`.
 - **Agricultural Quantities**: Mapped to `@db.Decimal(12, 3)` (up to 3 decimal places). Supports precise weights in metric tons, kilograms, grams, quintals, or farm size in acres/hectares (e.g., `12.500 kg`).
 
 ---
 
-## ⚡ 6. Indexing Strategy
+## ⚡ 7. Indexing Strategy
 
 Comprehensive B-Tree indexes (`@@index`) are established on all high-frequency query paths:
 - **Filtering**: `User.role`, `CropListing.status`, `CropListing.categoryId`, `Order.status`, `Complaint.status`
@@ -105,7 +112,7 @@ Comprehensive B-Tree indexes (`@@index`) are established on all high-frequency q
 
 ---
 
-## 🔄 7. Migration Instructions
+## 🔄 8. Migration Instructions
 
 To apply schema changes to the local or production database:
 
@@ -115,11 +122,12 @@ cd backend
 npx prisma validate
 
 # 2. Run Prisma migration
-npx prisma migrate dev --name domain_layer_init
+npx prisma migrate dev --name domain_integrity_refinements
 
 # 3. Generate Prisma Client
 npx prisma generate
 
-# 4. Verify database structure
+# 4. Apply custom SQL check constraints & verify database structure
+node src/utils/apply_constraints.js
 node src/utils/verify_db.js
 ```
