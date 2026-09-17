@@ -1,5 +1,5 @@
-// FarmDex Prisma Schema Configuration
-// Note: Domain models will be designed and migrated in subsequent phases.
+// FarmDex Production-Quality Prisma Schema
+// Milestone 2A Database Domain Layer
 
 generator client {
   provider = "prisma-client-js"
@@ -10,11 +10,548 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Initial system verification model for testing database connectivity and migrations
-model SystemHealthCheck {
-  id        String   @id @default(uuid())
-  status    String   @default("OK")
-  timestamp DateTime @default(now())
+// ==========================================
+// 1. ENUMS
+// ==========================================
 
-  @@map("system_health_checks")
+enum UserRole {
+  FARMER
+  BUYER
+  ADMIN
+}
+
+enum BuyerType {
+  RETAILER
+  WHOLESALER
+  RESTAURANT
+  CONSUMER
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ListingStatus {
+  ACTIVE
+  INACTIVE
+  SOLD_OUT
+  SUSPENDED
+  ARCHIVED
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COUNTERED
+  EXPIRED
+  CANCELLED
+}
+
+enum AuctionStatus {
+  SCHEDULED
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PACKED
+  SHIPPED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum DeliveryStatus {
+  PENDING
+  PACKED
+  SHIPPED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum NotificationType {
+  NEW_OFFER
+  OFFER_ACCEPTED
+  OFFER_REJECTED
+  COUNTER_OFFER
+  NEW_BID
+  AUCTION_ENDING
+  NEW_MESSAGE
+  ORDER_CONFIRMED
+  PAYMENT_SUCCESS
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+}
+
+enum ComplaintStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+// ==========================================
+// 2. USER & PROFILE DOMAIN
+// ==========================================
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  phone        String?  @unique
+  role         UserRole @default(BUYER)
+  isVerified   Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  farmerProfile           FarmerProfile?
+  buyerProfile            BuyerProfile?
+  offers                  Offer[]
+  bids                    Bid[]
+  buyerOrders             Order[]                  @relation("BuyerOrders")
+  farmerOrders            Order[]                  @relation("FarmerOrders")
+  conversationParticipants ConversationParticipant[]
+  sentMessages            Message[]
+  notifications           Notification[]
+  givenReviews            Review[]                 @relation("GivenReviews")
+  receivedReviews         Review[]                 @relation("ReceivedReviews")
+  wishlists               Wishlist[]
+  complaints              Complaint[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model FarmerProfile {
+  id                 String             @id @default(uuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  farmName           String?
+  farmSize           Decimal?           @db.Decimal(12, 3)
+  address            String?
+  district           String?
+  state              String?
+  pincode            String?
+  latitude           Float?
+  longitude          Float?
+  verificationStatus VerificationStatus @default(PENDING)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  farms        Farm[]
+  cropListings CropListing[]
+
+  @@map("farmer_profiles")
+}
+
+model BuyerProfile {
+  id           String     @id @default(uuid())
+  userId       String     @unique
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName String?
+  businessType BuyerType?
+  address      String?
+  district     String?
+  state        String?
+  pincode      String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@map("buyer_profiles")
+}
+
+model Farm {
+  id              String        @id @default(uuid())
+  farmerProfileId String
+  farmerProfile   FarmerProfile @relation(fields: [farmerProfileId], references: [id], onDelete: Cascade)
+  name            String
+  size            Decimal?      @db.Decimal(12, 3)
+  address         String?
+  district        String?
+  state           String?
+  pincode         String?
+  latitude        Float?
+  longitude       Float?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  cropListings CropListing[]
+
+  @@index([farmerProfileId])
+  @@map("farms")
+}
+
+// ==========================================
+// 3. MARKETPLACE DOMAIN
+// ==========================================
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  cropListings CropListing[]
+
+  @@map("categories")
+}
+
+model CropListing {
+  id              String        @id @default(uuid())
+  farmerProfileId String
+  farmerProfile   FarmerProfile @relation(fields: [farmerProfileId], references: [id], onDelete: Restrict)
+  farmId          String?
+  farm            Farm?         @relation(fields: [farmId], references: [id], onDelete: SetNull)
+  categoryId      String
+  category        Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  cropName        String
+  description     String?
+  quantity        Decimal       @db.Decimal(12, 3)
+  unit            String
+  quality         String?
+  pricePerUnit    Decimal       @db.Decimal(12, 2)
+  harvestDate     DateTime?
+  location        String?
+  isOrganic       Boolean       @default(false)
+  status          ListingStatus @default(ACTIVE)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  productImages ProductImage[]
+  offers        Offer[]
+  auction       Auction?
+  orderItems    OrderItem[]
+  wishlists     Wishlist[]
+  complaints    Complaint[]
+
+  @@index([farmerProfileId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([cropName])
+  @@index([location])
+  @@map("crop_listings")
+}
+
+model ProductImage {
+  id        String      @id @default(uuid())
+  listingId String
+  listing   CropListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  imageUrl  String
+  publicId  String?
+  sortOrder Int         @default(0)
+  createdAt DateTime    @default(now())
+
+  @@index([listingId])
+  @@map("product_images")
+}
+
+// ==========================================
+// 4. NEGOTIATION & AUCTION DOMAIN
+// ==========================================
+
+model Offer {
+  id           String      @id @default(uuid())
+  listingId    String
+  listing      CropListing @relation(fields: [listingId], references: [id], onDelete: Restrict)
+  buyerId      String
+  buyer        User        @relation(fields: [buyerId], references: [id], onDelete: Restrict)
+  quantity     Decimal     @db.Decimal(12, 3)
+  offeredPrice Decimal     @db.Decimal(12, 2)
+  message      String?
+  status       OfferStatus @default(PENDING)
+  expiresAt    DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([listingId])
+  @@index([buyerId])
+  @@index([status])
+  @@map("offers")
+}
+
+model Auction {
+  id               String        @id @default(uuid())
+  listingId        String        @unique
+  listing          CropListing   @relation(fields: [listingId], references: [id], onDelete: Restrict)
+  startPrice       Decimal       @db.Decimal(12, 2)
+  currentPrice     Decimal       @db.Decimal(12, 2)
+  minimumIncrement Decimal       @db.Decimal(12, 2)
+  startTime        DateTime
+  endTime          DateTime
+  status           AuctionStatus @default(SCHEDULED)
+  winnerBidId      String?       @unique
+  winnerBid        Bid?          @relation("AuctionWinner", fields: [winnerBidId], references: [id], onDelete: SetNull)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  bids Bid[] @relation("AuctionBids")
+
+  @@index([status])
+  @@map("auctions")
+}
+
+model Bid {
+  id        String   @id @default(uuid())
+  auctionId String
+  auction   Auction  @relation("AuctionBids", fields: [auctionId], references: [id], onDelete: Cascade)
+  buyerId   String
+  buyer     User     @relation(fields: [buyerId], references: [id], onDelete: Restrict)
+  amount    Decimal  @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+
+  winningAuction Auction? @relation("AuctionWinner")
+
+  @@index([auctionId])
+  @@index([buyerId])
+  @@map("bids")
+}
+
+// ==========================================
+// 5. ORDER, PAYMENT & DELIVERY DOMAIN
+// ==========================================
+
+model Order {
+  id              String      @id @default(uuid())
+  buyerId         String
+  buyer           User        @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Restrict)
+  farmerId        String
+  farmer          User        @relation("FarmerOrders", fields: [farmerId], references: [id], onDelete: Restrict)
+  totalAmount     Decimal     @db.Decimal(12, 2)
+  status          OrderStatus @default(PENDING)
+  shippingAddress String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  orderItems OrderItem[]
+  payment    Payment?
+  delivery   Delivery?
+  reviews    Review[]
+  complaints Complaint[]
+
+  @@index([buyerId])
+  @@index([farmerId])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id           String      @id @default(uuid())
+  orderId      String
+  order        Order       @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  listingId    String
+  listing      CropListing @relation(fields: [listingId], references: [id], onDelete: Restrict)
+  quantity     Decimal     @db.Decimal(12, 3)
+  pricePerUnit Decimal     @db.Decimal(12, 2)
+  subtotal     Decimal     @db.Decimal(12, 2)
+  createdAt    DateTime    @default(now())
+
+  @@index([orderId])
+  @@index([listingId])
+  @@map("order_items")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  orderId       String        @unique
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  provider      String        @default("RAZORPAY")
+  transactionId String?
+  amount        Decimal       @db.Decimal(12, 2)
+  status        PaymentStatus @default(PENDING)
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("payments")
+}
+
+model Delivery {
+  id                String         @id @default(uuid())
+  orderId           String         @unique
+  order             Order          @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  status            DeliveryStatus @default(PENDING)
+  trackingNumber    String?
+  estimatedDelivery DateTime?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@map("deliveries")
+}
+
+// ==========================================
+// 6. COMMUNICATION DOMAIN
+// ==========================================
+
+model Conversation {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@index([userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  content        String
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@map("messages")
+}
+
+// ==========================================
+// 7. NOTIFICATION, REVIEW, WISHLIST & COMPLAINT DOMAIN
+// ==========================================
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  reviewerId String
+  reviewer   User     @relation("GivenReviews", fields: [reviewerId], references: [id], onDelete: Restrict)
+  revieweeId String
+  reviewee   User     @relation("ReceivedReviews", fields: [revieweeId], references: [id], onDelete: Restrict)
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([orderId, reviewerId])
+  @@index([orderId])
+  @@index([reviewerId])
+  @@index([revieweeId])
+  @@map("reviews")
+}
+
+model Wishlist {
+  id        String      @id @default(uuid())
+  buyerId   String
+  buyer     User        @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   CropListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@unique([buyerId, listingId])
+  @@index([buyerId])
+  @@index([listingId])
+  @@map("wishlists")
+}
+
+model Complaint {
+  id            String          @id @default(uuid())
+  reportedById  String
+  reportedBy    User            @relation(fields: [reportedById], references: [id], onDelete: Restrict)
+  listingId     String?
+  listing       CropListing?    @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  orderId       String?
+  order         Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  reason        String
+  description   String
+  status        ComplaintStatus @default(OPEN)
+  adminResponse String?
+  createdAt     DateTime        @default(now())
+  resolvedAt    DateTime?
+
+  @@index([reportedById])
+  @@index([status])
+  @@map("complaints")
+}
+
+// ==========================================
+// 8. EXTERNAL AGRICULTURAL & WEATHER DATA DOMAIN
+// ==========================================
+
+model MarketPrice {
+  id         String   @id @default(uuid())
+  cropName   String
+  marketName String
+  location   String
+  price      Decimal  @db.Decimal(12, 2)
+  unit       String
+  source     String
+  recordedAt DateTime
+  fetchedAt  DateTime @default(now())
+
+  @@index([cropName])
+  @@index([location])
+  @@index([recordedAt])
+  @@map("market_prices")
+}
+
+model WeatherData {
+  id          String   @id @default(uuid())
+  location    String
+  latitude    Float
+  longitude   Float
+  temperature Float
+  humidity    Float
+  rainfall    Float?
+  condition   String
+  source      String
+  recordedAt  DateTime
+  fetchedAt   DateTime @default(now())
+
+  @@index([location])
+  @@index([recordedAt])
+  @@map("weather_data")
 }
