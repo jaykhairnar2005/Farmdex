@@ -6,6 +6,8 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import healthRoutes from './routes/health.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import profileRoutes from './routes/profile.routes.js';
+import farmRoutes from './routes/farm.routes.js';
 
 dotenv.config();
 
@@ -48,6 +50,8 @@ app.use(express.urlencoded({ extended: true }));
 // Mount Routes
 app.use('/api', healthRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/profiles', profileRoutes);
+app.use('/api/farms', farmRoutes);
 
 // 404 Handler
 app.use((req, res) => {

@@ -35,7 +35,7 @@ apiClient.interceptors.response.use(
 );
 
 /**
- * Fetch Backend API Health Status
+ * Health Check Endpoints
  */
 export async function fetchApiHealth() {
   try {
@@ -49,9 +49,6 @@ export async function fetchApiHealth() {
   }
 }
 
-/**
- * Fetch Database Connection Health Status
- */
 export async function fetchDbHealth() {
   try {
     const response = await apiClient.get('/api/health/db');
@@ -65,25 +62,65 @@ export async function fetchDbHealth() {
 }
 
 /**
- * Register User API call
+ * Authentication Endpoints
  */
 export async function registerApi(registerData) {
   const response = await apiClient.post('/api/auth/register', registerData);
   return response.data;
 }
 
-/**
- * Login User API call
- */
 export async function loginApi(email, password) {
   const response = await apiClient.post('/api/auth/login', { email, password });
   return response.data;
 }
 
-/**
- * Get Authenticated User Profile API call
- */
 export async function getMeApi() {
   const response = await apiClient.get('/api/auth/me');
+  return response.data;
+}
+
+/**
+ * Profile Management Endpoints
+ */
+export async function getMeProfileApi() {
+  const response = await apiClient.get('/api/profiles/me');
+  return response.data;
+}
+
+export async function updateFarmerProfileApi(data) {
+  const response = await apiClient.put('/api/profiles/farmer', data);
+  return response.data;
+}
+
+export async function updateBuyerProfileApi(data) {
+  const response = await apiClient.put('/api/profiles/buyer', data);
+  return response.data;
+}
+
+/**
+ * Farm CRUD Endpoints (Farmer Only)
+ */
+export async function createFarmApi(data) {
+  const response = await apiClient.post('/api/farms', data);
+  return response.data;
+}
+
+export async function getFarmsApi() {
+  const response = await apiClient.get('/api/farms');
+  return response.data;
+}
+
+export async function getFarmByIdApi(id) {
+  const response = await apiClient.get(`/api/farms/${id}`);
+  return response.data;
+}
+
+export async function updateFarmApi(id, data) {
+  const response = await apiClient.put(`/api/farms/${id}`, data);
+  return response.data;
+}
+
+export async function deleteFarmApi(id) {
+  const response = await apiClient.delete(`/api/farms/${id}`);
   return response.data;
 }
