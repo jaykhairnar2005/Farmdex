@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import healthRoutes from './routes/health.routes.js';
+import authRoutes from './routes/auth.routes.js';
 
 dotenv.config();
 
@@ -22,10 +23,10 @@ app.use(
   })
 );
 
-// Rate Limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+// Global Rate Limiting (100 requests per 15 minutes)
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -33,19 +34,20 @@ const limiter = rateLimit({
     message: 'Too many requests from this IP, please try again after 15 minutes',
   },
 });
-app.use('/api', limiter);
+app.use('/api', globalLimiter);
 
-// Request Logging
+// Request Logging (Custom Morgan format ensuring passwords and tokens are never logged)
 if (process.env.NODE_ENV !== 'test') {
-  app.use(morgan('dev'));
+  app.use(morgan(':method :url :status :res[content-length] - :response-time ms'));
 }
 
 // Body Parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// Mount Routes
 app.use('/api', healthRoutes);
+app.use('/api/auth', authRoutes);
 
 // 404 Handler
 app.use((req, res) => {
@@ -57,7 +59,7 @@ app.use((req, res) => {
 
 // Global Error Handler
 app.use((err, req, res, _next) => {
-  console.error('Unhandled Error:', err.stack);
+  console.error('Unhandled Server Error:', err.message || err);
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Internal Server Error',

@@ -1,8 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Sprout, Server, Database, CheckCircle2, XCircle, RefreshCw, Cpu, ShieldCheck, Layers, GitBranch } from 'lucide-react';
+import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Sprout, Server, Database, CheckCircle2, XCircle, RefreshCw, Layers, LogOut, User, ShieldCheck } from 'lucide-react';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './hooks/useAuth';
 import { fetchApiHealth, fetchDbHealth } from './services/api';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import { ProtectedRoute } from './routes/ProtectedRoute';
 
-export default function App() {
+function HomeDashboard() {
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
   const [apiState, setApiState] = useState({ loading: true, data: null, error: null });
   const [dbState, setDbState] = useState({ loading: true, data: null, error: null });
   const [lastRefreshed, setLastRefreshed] = useState(null);
@@ -11,7 +19,6 @@ export default function App() {
     setApiState((prev) => ({ ...prev, loading: true }));
     setDbState((prev) => ({ ...prev, loading: true }));
 
-    // 1. Check API Health (GET /api/health)
     const apiRes = await fetchApiHealth();
     if (apiRes.success) {
       setApiState({ loading: false, data: apiRes, error: null });
@@ -19,7 +26,6 @@ export default function App() {
       setApiState({ loading: false, data: null, error: apiRes.message });
     }
 
-    // 2. Check DB Health (GET /api/health/db)
     const dbRes = await fetchDbHealth();
     if (dbRes.success) {
       setDbState({ loading: false, data: dbRes, error: null });
@@ -35,7 +41,7 @@ export default function App() {
   }, [verifyHealth]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 sm:p-8 selection:bg-emerald-500 selection:text-slate-950">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 sm:p-8">
       <div className="max-w-5xl mx-auto w-full space-y-8">
         {/* Header */}
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
@@ -47,25 +53,57 @@ export default function App() {
               <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
                 FarmDex
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
-                  v1.0.0 Foundation
+                  Milestone 2B Auth Active
                 </span>
               </h1>
               <p className="text-sm text-slate-400">Real-Time Agricultural Marketplace &amp; Trading Platform</p>
             </div>
           </div>
-          <button
-            onClick={verifyHealth}
-            disabled={apiState.loading || dbState.loading}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium transition-all shadow-lg shadow-emerald-950/40 disabled:opacity-50 cursor-pointer"
-          >
-            <RefreshCw className={`w-4 h-4 ${apiState.loading || dbState.loading ? 'animate-spin' : ''}`} />
-            Refresh Health Pings
-          </button>
+
+          <div className="flex items-center gap-3">
+            {isAuthenticated ? (
+              <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl">
+                <User className="w-4 h-4 text-emerald-400" />
+                <div className="text-xs">
+                  <div className="font-semibold text-slate-200">{user?.name}</div>
+                  <div className="text-slate-400 font-mono text-[10px] uppercase">{user?.role}</div>
+                </div>
+                <button
+                  onClick={logout}
+                  title="Log out"
+                  className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-rose-400 rounded-lg transition-colors cursor-pointer ml-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 text-sm font-medium rounded-lg border border-slate-800 transition-colors"
+                >
+                  Log In
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-lg shadow-md shadow-emerald-950/40 transition-all"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
+            <button
+              onClick={verifyHealth}
+              disabled={apiState.loading || dbState.loading}
+              className="p-2.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 rounded-lg transition-all disabled:opacity-50 cursor-pointer"
+            >
+              <RefreshCw className={`w-4 h-4 ${apiState.loading || dbState.loading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
         </header>
 
         {/* System Health Cards Grid */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card 1: Backend API Health */}
           <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -104,7 +142,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Card 2: Database Connection Health */}
           <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -144,40 +181,46 @@ export default function App() {
           </div>
         </section>
 
-        {/* Architecture & Stack Details */}
-        <section className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-          <h3 className="font-semibold text-slate-200 flex items-center gap-2">
-            <Layers className="w-5 h-5 text-emerald-400" /> System Foundation Stack
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
-            <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-1">
-              <span className="text-slate-500 block">Frontend Stack</span>
-              <span className="text-slate-200 font-semibold">React 18 + Vite + Tailwind</span>
+        {/* User Session Info Card */}
+        {isAuthenticated && (
+          <section className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+            <h3 className="font-semibold text-slate-200 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-emerald-400" /> Active Authenticated Session
+            </h3>
+            <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 font-mono text-xs text-slate-300 space-y-1.5">
+              <p><span className="text-slate-500">User ID:</span> {user.id}</p>
+              <p><span className="text-slate-500">Name:</span> {user.name}</p>
+              <p><span className="text-slate-500">Email:</span> {user.email}</p>
+              <p><span className="text-slate-500">Role:</span> <span className="text-emerald-400">{user.role}</span></p>
+              {user.farmerProfile && (
+                <p><span className="text-slate-500">Farm Name:</span> {user.farmerProfile.farmName || 'Not specified'}</p>
+              )}
+              {user.buyerProfile && (
+                <p><span className="text-slate-500">Business Name:</span> {user.buyerProfile.businessName || 'Not specified'}</p>
+              )}
             </div>
-            <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-1">
-              <span className="text-slate-500 block">Backend Server</span>
-              <span className="text-slate-200 font-semibold">Express.js + Node 24</span>
-            </div>
-            <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-1">
-              <span className="text-slate-500 block">Database ORM</span>
-              <span className="text-slate-200 font-semibold">Prisma + PostgreSQL 18</span>
-            </div>
-            <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-1">
-              <span className="text-slate-500 block">Real-Time</span>
-              <span className="text-slate-200 font-semibold">Socket.IO Ready</span>
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
       </div>
 
-      {/* Footer */}
-      <footer className="max-w-5xl mx-auto w-full mt-8 pt-4 border-t border-slate-900 text-xs text-slate-500 flex flex-col sm:flex-row justify-between items-center gap-2">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-500" />
-          <span>FarmDex Core Foundation Environment Active</span>
-        </div>
-        {lastRefreshed && <span>Last verified: {lastRefreshed}</span>}
+      <footer className="max-w-5xl mx-auto w-full mt-8 pt-4 border-t border-slate-900 text-xs text-slate-500 flex justify-between items-center">
+        <span>FarmDex Authentication Layer Active</span>
+        {lastRefreshed && <span>Verified: {lastRefreshed}</span>}
       </footer>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<HomeDashboard />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
