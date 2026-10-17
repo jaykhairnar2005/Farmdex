@@ -32,8 +32,19 @@ export default function Login() {
     setServerError('');
     setSubmitting(true);
     try {
-      await login(data.email, data.password);
-      navigate(from, { replace: true });
+      const loginResult = await login(data.email, data.password);
+      const loggedUser = loginResult?.user;
+
+      // Role-based redirection: if redirecting from an attempted protected route, respect it
+      if (location.state?.from?.pathname) {
+        navigate(location.state.from.pathname, { replace: true });
+      } else if (loggedUser?.role === 'ADMIN') {
+        navigate('/admin', { replace: true });
+      } else if (loggedUser?.role === 'FARMER') {
+        navigate('/my-listings', { replace: true });
+      } else {
+        navigate('/marketplace', { replace: true });
+      }
     } catch (err) {
       setServerError(err.response?.data?.message || err.message || 'Login failed. Please try again.');
     } finally {

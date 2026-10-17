@@ -1,12 +1,20 @@
 import jwt from 'jsonwebtoken';
 
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('Fatal configuration error: JWT_SECRET environment variable is missing');
+  }
+  return secret;
+}
+
 /**
  * Generate Access Token with minimal payload { sub, role, email }
  * @param {object} user - User object containing id, role, email
  * @returns {string} Signed JWT token string
  */
 export function generateAccessToken(user) {
-  const secret = process.env.JWT_SECRET || 'farmdex_dev_jwt_secret_change_in_production';
+  const secret = getJwtSecret();
   const payload = {
     sub: user.id,
     role: user.role,
@@ -30,6 +38,6 @@ export function generateRefreshToken(_user) {
  * @returns {object} Decoded JWT payload
  */
 export function verifyAccessToken(token) {
-  const secret = process.env.JWT_SECRET || 'farmdex_dev_jwt_secret_change_in_production';
+  const secret = getJwtSecret();
   return jwt.verify(token, secret);
 }

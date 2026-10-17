@@ -2,12 +2,20 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { Sprout, Server, Database, CheckCircle2, XCircle, RefreshCw, Layers, LogOut, User, ShieldCheck } from 'lucide-react';
 import { AuthProvider } from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
 import { useAuth } from './hooks/useAuth';
 import { fetchApiHealth, fetchDbHealth } from './services/api';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Farms from './pages/Farms';
+import Marketplace from './pages/Marketplace';
+import CropDetail from './pages/CropDetail';
+import MyListings from './pages/MyListings';
+import OffersDashboard from './pages/OffersDashboard';
+import Orders from './pages/Orders';
+import Messages from './pages/Messages';
+import AdminDashboard from './pages/AdminDashboard';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import Navbar from './components/Navbar';
 
@@ -57,21 +65,30 @@ function HomeDashboard() {
               <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
                 FarmDex
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
-                  Milestone 3 Profiles &amp; Farms
+                  Milestone 5 Trade Negotiations
                 </span>
               </h1>
               <p className="text-sm text-slate-400">Real-Time Agricultural Marketplace &amp; Trading Platform</p>
             </div>
           </div>
 
-          <button
-            onClick={verifyHealth}
-            disabled={apiState.loading || dbState.loading}
-            className="p-2.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 rounded-lg transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2 text-sm"
-          >
-            <RefreshCw className={`w-4 h-4 ${apiState.loading || dbState.loading ? 'animate-spin' : ''}`} />
-            Refresh Health Status
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/marketplace"
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl shadow-md transition-all text-sm flex items-center gap-2"
+            >
+              <Sprout className="w-4 h-4" /> Explore Marketplace
+            </Link>
+
+            <button
+              onClick={verifyHealth}
+              disabled={apiState.loading || dbState.loading}
+              className="p-2.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 rounded-lg transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2 text-sm"
+            >
+              <RefreshCw className={`w-4 h-4 ${apiState.loading || dbState.loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh Health</span>
+            </button>
+          </div>
         </div>
 
         {/* System Health Cards Grid */}
@@ -181,8 +198,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/" element={<HomeDashboard />} />
+        <SocketProvider>
+          <Routes>
+            <Route path="/" element={<HomeDashboard />} />
+          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/crops/:id" element={<CropDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route
@@ -201,8 +221,49 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/my-listings"
+            element={
+              <ProtectedRoute allowedRoles={['FARMER']}>
+                <MyListings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/offers"
+            element={
+              <ProtectedRoute>
+                <OffersDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute>
+                <Orders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute>
+                <Messages />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
-      </AuthProvider>
-    </BrowserRouter>
-  );
+      </SocketProvider>
+    </AuthProvider>
+  </BrowserRouter>
+);
 }

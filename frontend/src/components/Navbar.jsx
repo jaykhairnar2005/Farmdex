@@ -1,13 +1,16 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Sprout, User, Tractor, LogOut, LayoutDashboard } from 'lucide-react';
+import { Sprout, User, Tractor, LogOut, LayoutDashboard, ShoppingBag, Store, Handshake, ShieldCheck, MessageSquare } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useSocket } from '../context/SocketContext';
+import NotificationDropdown from './NotificationDropdown';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
+  const { unreadMessagesCount, isConnected } = useSocket();
   const location = useLocation();
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   return (
     <nav className="bg-slate-900 border-b border-slate-800 text-slate-100 sticky top-0 z-40">
@@ -21,21 +24,103 @@ export default function Navbar() {
         </Link>
 
         {/* Navigation Links */}
-        <div className="flex items-center space-x-1 sm:space-x-4 text-sm font-medium">
+        <div className="flex items-center space-x-1 sm:space-x-3 text-sm font-medium">
+          <Link
+            to="/marketplace"
+            className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
+              isActive('/marketplace') || location.pathname.startsWith('/crops')
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
+          >
+            <Store className="w-4 h-4" />
+            <span>Marketplace</span>
+          </Link>
+
           <Link
             to="/"
             className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
-              isActive('/')
+              location.pathname === '/'
                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
             <LayoutDashboard className="w-4 h-4" />
-            <span className="hidden sm:inline">Health Dashboard</span>
+            <span className="hidden sm:inline">System Health</span>
           </Link>
 
           {isAuthenticated && (
             <>
+              {user?.role === 'FARMER' && (
+                <>
+                  <Link
+                    to="/my-listings"
+                    className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
+                      isActive('/my-listings')
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <Sprout className="w-4 h-4" />
+                    <span>My Produce</span>
+                  </Link>
+
+                  <Link
+                    to="/farms"
+                    className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
+                      isActive('/farms')
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <Tractor className="w-4 h-4" />
+                    <span>My Farms</span>
+                  </Link>
+                </>
+              )}
+
+              <Link
+                to="/offers"
+                className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
+                  isActive('/offers')
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+              >
+                <Handshake className="w-4 h-4" />
+                <span>{user?.role === 'FARMER' ? 'Trade Offers' : 'My Offers'}</span>
+              </Link>
+
+              <Link
+                to="/orders"
+                className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
+                  isActive('/orders')
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>Orders</span>
+              </Link>
+
+              {/* Real-Time Chat Link */}
+              <Link
+                to="/messages"
+                className={`relative px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
+                  isActive('/messages')
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                }`}
+              >
+                <MessageSquare className="w-4 h-4" />
+                <span>Messages</span>
+                {unreadMessagesCount > 0 && (
+                  <span className="min-w-[16px] h-[16px] px-1 bg-emerald-500 text-slate-950 font-bold rounded-full text-[10px] flex items-center justify-center font-mono">
+                    {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                  </span>
+                )}
+              </Link>
+
               <Link
                 to="/profile"
                 className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
@@ -48,30 +133,40 @@ export default function Navbar() {
                 <span>My Profile</span>
               </Link>
 
-              {user?.role === 'FARMER' && (
+              {user?.role === 'ADMIN' && (
                 <Link
-                  to="/farms"
-                  className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
-                    isActive('/farms')
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                  to="/admin"
+                  className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 font-semibold ${
+                    isActive('/admin')
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      : 'text-amber-400 hover:text-amber-200 hover:bg-slate-800/50'
                   }`}
                 >
-                  <Tractor className="w-4 h-4" />
-                  <span>My Farms</span>
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Admin Panel</span>
                 </Link>
               )}
             </>
           )}
         </div>
 
-        {/* Auth Buttons / Profile Menu */}
+        {/* Auth Buttons / Notifications / Profile Menu */}
         <div className="flex items-center space-x-3">
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
+              {/* Notification Popover Dropdown */}
+              <NotificationDropdown />
+
               <div className="hidden md:flex flex-col text-right">
                 <span className="text-xs font-semibold text-slate-200">{user?.name}</span>
-                <span className="text-[10px] font-mono text-emerald-400 uppercase">{user?.role}</span>
+                <span className="text-[10px] font-mono text-emerald-400 uppercase flex items-center justify-end gap-1">
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      isConnected ? 'bg-emerald-400' : 'bg-slate-500'
+                    }`}
+                  />
+                  {user?.role}
+                </span>
               </div>
               <button
                 onClick={logout}

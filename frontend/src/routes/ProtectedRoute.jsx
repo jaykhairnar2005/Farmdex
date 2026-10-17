@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export function ProtectedRoute({ children, allowedRoles }) {
@@ -32,12 +32,12 @@ export function ProtectedRoute({ children, allowedRoles }) {
           <p className="text-sm text-slate-400">
             Your account role (<span className="font-mono text-emerald-400">{user.role}</span>) is not authorized to view this page.
           </p>
-          <a
-            href="/"
+          <Link
+            to="/"
             className="inline-block px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg transition-colors"
           >
             Return to Dashboard
-          </a>
+          </Link>
         </div>
       </div>
     );

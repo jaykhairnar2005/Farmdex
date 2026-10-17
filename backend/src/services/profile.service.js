@@ -22,7 +22,7 @@ export async function getMeProfileService(userId) {
 
   if (!user) {
     const error = new Error('User profile not found');
-    error.statusCode = 444;
+    error.statusCode = 404;
     throw error;
   }
 

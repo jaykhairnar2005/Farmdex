@@ -41,7 +41,7 @@ export const updateFarmerProfileSchema = z
     latitude: latitudeRule,
     longitude: longitudeRule,
   })
-  .passthrough();
+  .strict();
 
 /**
  * Partial Buyer Profile Update Schema
@@ -55,4 +55,4 @@ export const updateBuyerProfileSchema = z
     state: z.string().max(100, 'State cannot exceed 100 characters').optional().nullable(),
     pincode: pincodeRule,
   })
-  .passthrough();
+  .strict();

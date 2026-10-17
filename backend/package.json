@@ -8,7 +8,9 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "seed:categories": "node src/utils/seed_categories.js",
+    "seed:admin": "node src/utils/seed_admin.js"
   },
   "keywords": [
     "farmdex",
@@ -23,6 +25,7 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.11.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -30,7 +33,10 @@
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "multer": "^2.4.0",
+    "razorpay": "^2.9.8",
     "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.4",
     "zod": "^3.24.2"
   },
   "devDependencies": {

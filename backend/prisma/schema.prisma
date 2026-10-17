@@ -60,9 +60,12 @@ enum AuctionStatus {
 enum OrderStatus {
   PENDING
   CONFIRMED
+  PREPARING
   PACKED
+  DISPATCHED
   SHIPPED
   IN_TRANSIT
+  OUT_FOR_DELIVERY
   DELIVERED
   CANCELLED
 }
@@ -76,9 +79,12 @@ enum PaymentStatus {
 
 enum DeliveryStatus {
   PENDING
+  PREPARING
   PACKED
+  DISPATCHED
   SHIPPED
   IN_TRANSIT
+  OUT_FOR_DELIVERY
   DELIVERED
   CANCELLED
 }
@@ -282,6 +288,8 @@ model Offer {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
+  order        Order?
+
   @@index([listingId])
   @@index([buyerId])
   @@index([status])
@@ -331,6 +339,8 @@ model Bid {
 
 model Order {
   id              String      @id @default(uuid())
+  offerId         String?     @unique
+  offer           Offer?      @relation(fields: [offerId], references: [id], onDelete: SetNull)
   buyerId         String
   buyer           User        @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Restrict)
   farmerId        String

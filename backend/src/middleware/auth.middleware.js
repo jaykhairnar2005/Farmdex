@@ -82,3 +82,31 @@ export function authorizeRoles(...allowedRoles) {
     next();
   };
 }
+
+/**
+ * Optional Authentication Middleware
+ * Populates req.user if a valid Bearer token is provided, without failing if absent.
+ */
+export async function optionalAuthenticateToken(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const decoded = verifyAccessToken(token);
+        const user = await prisma.user.findUnique({
+          where: { id: decoded.sub },
+          select: userPublicSelect,
+        });
+        if (user && user.isActive) {
+          req.user = user;
+        }
+      } catch {
+        // Ignored for optional authentication
+      }
+    }
+  } catch {
+    // Continue unauthenticated on any error
+  }
+  next();
+}
