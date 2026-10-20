@@ -1,31 +1,31 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
-  Search,
-  Filter,
-  Sprout,
-  MapPin,
-  Tag,
-  ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
-  RotateCcw,
-  ShieldCheck,
-  CheckCircle2,
-  Package,
+  Search, MapPin, ChevronLeft, ChevronRight, RotateCcw, Package, Leaf,
+  SlidersHorizontal, ShieldCheck, X,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import {
+  Pagination, FilterPills, SkeletonCard, EmptyState, ErrorState, Badge,
+} from '../components/ui';
 import { fetchCategoriesApi, fetchCropListingsApi } from '../services/api';
+import { getCropImageUrl, handleImageFallback } from '../utils/cropImages';
+import { formatCurrency, formatNumber } from '../utils/formatters';
 
 export default function Marketplace() {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState([]);
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Filter and pagination states
-  const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  // Filter + pagination state (initialised from URL so the homepage search works)
+  const [search, setSearch] = useState(searchParams.get('q') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('categoryId') || '');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [isOrganic, setIsOrganic] = useState(false);
@@ -33,14 +33,12 @@ export default function Marketplace() {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ total: 0, totalPages: 1, limit: 12 });
 
-  // Load active categories
+  // Categories (one-time)
   useEffect(() => {
     async function loadCategories() {
       try {
         const res = await fetchCategoriesApi();
-        if (res.success && Array.isArray(res.data)) {
-          setCategories(res.data);
-        }
+        if (res.success && Array.isArray(res.data)) setCategories(res.data);
       } catch (err) {
         console.error('Failed to load categories:', err);
       }
@@ -48,16 +46,12 @@ export default function Marketplace() {
     loadCategories();
   }, []);
 
-  // Fetch listings with current filter parameters
+  // Fetch listings
   const loadListings = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const params = {
-        page,
-        limit: 12,
-        sort,
-      };
+      const params = { page, limit: 12, sort };
       if (search.trim()) params.search = search.trim();
       if (selectedCategory) params.categoryId = selectedCategory;
       if (minPrice) params.minPrice = parseFloat(minPrice);
@@ -73,18 +67,26 @@ export default function Marketplace() {
           limit: res.limit || 12,
         });
       } else {
-        setError(res.message || 'Failed to load crop listings');
+        setError(res.message || t('common.error', 'Failed to load crop listings'));
       }
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Error fetching marketplace listings');
+      setError(err.response?.data?.message || err.message || t('common.error', 'Error fetching marketplace listings'));
     } finally {
       setLoading(false);
     }
-  }, [page, search, selectedCategory, minPrice, maxPrice, isOrganic, sort]);
+  }, [page, search, selectedCategory, minPrice, maxPrice, isOrganic, sort, t]);
 
   useEffect(() => {
     loadListings();
   }, [loadListings]);
+
+  // Keep URL in sync (sharable, back-button friendly) — only the search term + category
+  useEffect(() => {
+    const next = new URLSearchParams();
+    if (search.trim()) next.set('q', search.trim());
+    if (selectedCategory) next.set('categoryId', selectedCategory);
+    setSearchParams(next, { replace: true });
+  }, [search, selectedCategory, setSearchParams]);
 
   const handleResetFilters = () => {
     setSearch('');
@@ -102,307 +104,292 @@ export default function Marketplace() {
     loadListings();
   };
 
+  const handleCategorySelect = (catId) => {
+    setSelectedCategory(catId === selectedCategory ? '' : catId);
+    setPage(1);
+  };
+
+  const activeFilterCount =
+    (search ? 1 : 0) + (selectedCategory ? 1 : 0) + (minPrice ? 1 : 0) + (maxPrice ? 1 : 0) + (isOrganic ? 1 : 0);
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-canvas flex flex-col">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto w-full p-4 sm:p-8 space-y-8 flex-1">
-        {/* Marketplace Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800 pb-6">
-          <div>
-            <div className="flex items-center space-x-2 text-emerald-400 text-xs font-mono uppercase tracking-wider mb-1">
-              <Sprout className="w-4 h-4" />
-              <span>Real-Time Mandi &amp; Farm Direct</span>
-            </div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">Agricultural Marketplace</h1>
-            <p className="text-sm text-slate-400 mt-1">
-              Browse farm-fresh crops, grains, and produce directly listed by verified farmers across India.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
-            <span className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300">
-              {pagination.total} Active Listings
-            </span>
-          </div>
+      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex-1">
+        {/* Page header */}
+        <div className="pb-6 border-b border-line">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-700 mb-1">
+            {t('home.heroTag', 'Agricultural marketplace')}
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-ink tracking-tight">
+            {t('marketplace.title', 'Browse fresh produce')}
+          </h1>
+          <p className="text-sm text-ink-muted mt-1.5 max-w-2xl">
+            {t('marketplace.subtitle', 'Crops listed directly by registered farmers. Compare prices, negotiate offers, and track consignments in real time.')}
+          </p>
         </div>
 
-        {/* Search & Filter Bar */}
-        <section className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4">
-          <form onSubmit={handleSearchSubmit} className="flex flex-col md:flex-row gap-3">
+        {/* Search + controls */}
+        <div className="bg-surface border border-line rounded-xl p-4 sm:p-5 my-6 shadow-card space-y-4">
+          <form onSubmit={handleSearchSubmit} className="flex gap-2 sm:gap-3">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-500" />
+              <Search className="w-4 h-4 absolute left-3.5 top-3 text-ink-subtle" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by crop name (e.g. Wheat, Basmati, Tomato) or district/mandi..."
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm"
+                placeholder={t('marketplace.searchPlaceholder', 'Search by crop, variety, or district...')}
+                className="w-full pl-10 pr-9 h-10 bg-surface-muted border border-line rounded-lg text-ink placeholder:text-ink-subtle text-sm transition-colors"
               />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => { setSearch(''); setPage(1); }}
+                  aria-label={t('common.clear', 'Clear')}
+                  className="absolute right-2.5 top-2 p-1 text-ink-subtle hover:text-ink rounded cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="submit"
-                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm rounded-xl transition-all shadow-md cursor-pointer"
-              >
-                Search
-              </button>
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                title="Reset All Filters"
-                className="p-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 rounded-xl transition-colors cursor-pointer"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-            </div>
+            <button
+              type="submit"
+              className="h-10 px-5 bg-brand-800 hover:bg-brand-900 text-white font-medium text-sm rounded-lg transition-colors shrink-0"
+            >
+              {t('common.search', 'Search')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`h-10 px-3 border rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 shrink-0 ${
+                showFilters || activeFilterCount > 0
+                  ? 'bg-brand-50 border-brand-200 text-brand-800'
+                  : 'bg-surface border-line text-ink-muted hover:bg-surface-muted'
+              }`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              <span className="hidden sm:inline">{t('marketplace.filters', 'Filters')}</span>
+              {activeFilterCount > 0 && (
+                <span className="min-w-[18px] h-[18px] px-1 bg-brand-800 text-white text-[10px] font-semibold rounded-full flex items-center justify-center">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
           </form>
 
-          {/* Secondary Filter Controls */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2 border-t border-slate-800/80 text-xs">
-            {/* Category Select */}
-            <div>
-              <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                Category
-              </label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => {
-                  setSelectedCategory(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:border-emerald-500 text-xs"
-              >
-                <option value="">All Categories</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Min Price */}
-            <div>
-              <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                Min Price (₹)
-              </label>
-              <input
-                type="number"
-                placeholder="0"
-                value={minPrice}
-                onChange={(e) => {
-                  setMinPrice(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:border-emerald-500 text-xs font-mono"
-              />
-            </div>
-
-            {/* Max Price */}
-            <div>
-              <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                Max Price (₹)
-              </label>
-              <input
-                type="number"
-                placeholder="10000"
-                value={maxPrice}
-                onChange={(e) => {
-                  setMaxPrice(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:border-emerald-500 text-xs font-mono"
-              />
-            </div>
-
-            {/* Sort Order */}
-            <div>
-              <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                Sort By
-              </label>
-              <select
-                value={sort}
-                onChange={(e) => {
-                  setSort(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:border-emerald-500 text-xs"
-              >
-                <option value="latest">Newest First</option>
-                <option value="price_asc">Price: Low to High</option>
-                <option value="price_desc">Price: High to Low</option>
-                <option value="quantity_desc">Quantity: High to Low</option>
-              </select>
-            </div>
-
-            {/* Organic Switch */}
-            <div className="flex items-center sm:justify-start pt-5">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isOrganic}
-                  onChange={(e) => {
-                    setIsOrganic(e.target.checked);
-                    setPage(1);
-                  }}
-                  className="w-4 h-4 text-emerald-600 rounded bg-slate-950 border-slate-800 focus:ring-emerald-500 cursor-pointer"
-                />
-                <span className="text-xs font-semibold text-emerald-400">Organic Only</span>
-              </label>
-            </div>
+          {/* Category pills */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            <FilterPills
+              items={[
+                { id: '', label: t('category.all', 'All categories') },
+                ...categories.map((c) => ({ id: c.id, label: c.name })),
+              ]}
+              value={selectedCategory}
+              onChange={handleCategorySelect}
+            />
           </div>
-        </section>
 
-        {/* Listings Grid */}
+          {/* Expandable advanced filters */}
+          {showFilters && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-3 border-t border-line fade-in">
+              <FilterField label={t('common.filter', 'Category')}>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => { setSelectedCategory(e.target.value); setPage(1); }}
+                  className="w-full h-9 px-3 bg-surface-muted border border-line rounded-lg text-ink text-sm"
+                >
+                  <option value="">{t('category.all', 'All categories')}</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </FilterField>
+              <FilterField label={`${t('common.price', 'Price')} Min (₹)`}>
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={minPrice}
+                  onChange={(e) => { setMinPrice(e.target.value); setPage(1); }}
+                  className="w-full h-9 px-3 bg-surface-muted border border-line rounded-lg text-ink text-sm"
+                />
+              </FilterField>
+              <FilterField label={`${t('common.price', 'Price')} Max (₹)`}>
+                <input
+                  type="number"
+                  placeholder="10000"
+                  value={maxPrice}
+                  onChange={(e) => { setMaxPrice(e.target.value); setPage(1); }}
+                  className="w-full h-9 px-3 bg-surface-muted border border-line rounded-lg text-ink text-sm"
+                />
+              </FilterField>
+              <FilterField label={t('marketplace.sortBy', 'Sort order')}>
+                <select
+                  value={sort}
+                  onChange={(e) => { setSort(e.target.value); setPage(1); }}
+                  className="w-full h-9 px-3 bg-surface-muted border border-line rounded-lg text-ink text-sm"
+                >
+                  <option value="latest">{t('marketplace.sortLatest', 'Latest Listings')}</option>
+                  <option value="price_asc">{t('marketplace.sortPriceAsc', 'Price: Low to High')}</option>
+                  <option value="price_desc">{t('marketplace.sortPriceDesc', 'Price: High to Low')}</option>
+                  <option value="quantity_desc">{t('common.quantity', 'Quantity')}</option>
+                </select>
+              </FilterField>
+              <div className="flex items-end gap-3">
+                <label className="flex items-center gap-2 cursor-pointer pb-2 text-sm text-ink">
+                  <input
+                    type="checkbox"
+                    checked={isOrganic}
+                    onChange={(e) => { setIsOrganic(e.target.checked); setPage(1); }}
+                    className="w-4 h-4 rounded border-line text-brand-800 accent-brand-800 cursor-pointer"
+                  />
+                  <span className="flex items-center gap-1 text-brand-800 font-medium">
+                    <Leaf className="w-3.5 h-3.5" /> {t('marketplace.organic', 'Organic')}
+                  </span>
+                </label>
+                <button
+                  onClick={handleResetFilters}
+                  title={t('common.resetFilters', 'Reset filters')}
+                  className="pb-2 text-xs text-ink-subtle hover:text-ink flex items-center gap-1 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" /> {t('common.reset', 'Reset')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Summary line */}
+          <div className="flex items-center justify-between text-xs text-ink-muted pt-1 border-t border-line/60">
+            <span>
+              {t('marketplace.showingListings', {
+                count: listings.length,
+                total: pagination.total,
+                defaultValue: `Showing ${listings.length} of ${pagination.total} active listings`
+              })}
+            </span>
+            {activeFilterCount > 0 && (
+              <button onClick={handleResetFilters} className="text-brand-800 hover:text-brand-900 font-medium flex items-center gap-1 cursor-pointer">
+                <RotateCcw className="w-3 h-3" /> {t('common.resetFilters', 'Reset filters')}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Listings grid */}
         {loading ? (
-          <div className="py-20 text-center space-y-3 font-mono text-sm text-slate-400">
-            <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p>Loading marketplace produce listings...</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
         ) : error ? (
-          <div className="p-6 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-center space-y-2">
-            <p className="font-semibold">{error}</p>
-            <button
-              onClick={loadListings}
-              className="px-4 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-200 text-xs rounded-lg transition-colors cursor-pointer"
-            >
-              Retry
-            </button>
-          </div>
+          <ErrorState message={error} onRetry={loadListings} />
         ) : listings.length === 0 ? (
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-16 text-center space-y-4 shadow-xl max-w-md mx-auto">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
-              <Package className="w-7 h-7" />
-            </div>
-            <h3 className="font-bold text-lg text-white">No Produce Listings Found</h3>
-            <p className="text-xs text-slate-400">
-              No crop listings matched your search criteria or price filters. Try adjusting or clearing your filters.
-            </p>
-            <button
-              onClick={handleResetFilters}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-xl shadow-md transition-all cursor-pointer"
-            >
-              Reset Filters
-            </button>
-          </div>
+          <EmptyState
+            icon={Package}
+            title={t('marketplace.noProduceFound', 'No produce found')}
+            message={t('marketplace.noProduceDesc', 'Try clearing search filters or selecting another crop category.')}
+            action={{ label: t('common.resetFilters', 'Reset filters'), onClick: handleResetFilters }}
+          />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {listings.map((item) => {
-              const primaryImage = item.productImages?.[0]?.imageUrl;
-              const farmer = item.farmerProfile;
-              const farmerUser = farmer?.user;
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 stagger">
+              {listings.map((item) => {
+                const primaryImage = item.productImages?.[0]?.imageUrl;
+                const displayImg = getCropImageUrl(item.cropName, item.category?.name, primaryImage);
+                const farmer = item.farmerProfile;
+                const farmerUser = farmer?.user;
 
-              return (
-                <Link
-                  key={item.id}
-                  to={`/crops/${item.id}`}
-                  className="group bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-slate-700 shadow-xl transition-all flex flex-col justify-between"
-                >
-                  <div>
-                    {/* Image or Styled Fallback */}
-                    <div className="relative aspect-video bg-slate-950 overflow-hidden">
-                      {primaryImage ? (
-                        <img
-                          src={primaryImage}
-                          alt={item.cropName}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-600 space-y-1 bg-gradient-to-br from-slate-950 to-slate-900">
-                          <Sprout className="w-8 h-8 text-emerald-500/30" />
-                          <span className="text-[11px] font-mono text-slate-500">FarmDex Produce</span>
-                        </div>
-                      )}
-
-                      {/* Organic Badge */}
+                return (
+                  <Link
+                    key={item.id}
+                    to={`/crops/${item.id}`}
+                    className="group bg-surface border border-line rounded-xl overflow-hidden hover:shadow-card-hover transition-shadow flex flex-col shadow-card"
+                  >
+                    <div className="relative aspect-[4/3] bg-surface-muted overflow-hidden">
+                      <img
+                        src={displayImg}
+                        alt={item.cropName}
+                        loading="lazy"
+                        onError={(e) => handleImageFallback(e, item.cropName, item.category?.name)}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
                       {item.isOrganic && (
-                        <span className="absolute top-2.5 left-2.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/30 backdrop-blur-sm">
-                          ORGANIC
+                        <span className="absolute top-3 left-3">
+                          <Badge colour="brand" size="sm" icon={<Leaf className="w-3 h-3" />}>
+                            {t('marketplace.organic', 'Organic')}
+                          </Badge>
                         </span>
                       )}
-
-                      {/* Category Badge */}
-                      <span className="absolute bottom-2.5 left-2.5 text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-950/80 text-slate-300 border border-slate-800 backdrop-blur-sm">
+                      {item.quality && (
+                        <span className="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-surface/95 text-ink border border-line backdrop-blur-sm">
+                          {t('marketplace.grade', { grade: item.quality, defaultValue: `Grade ${item.quality}` })}
+                        </span>
+                      )}
+                      <span className="absolute bottom-3 left-3 text-[11px] font-medium px-2.5 py-1 rounded-md bg-surface/95 text-ink-muted border border-line backdrop-blur-sm">
                         {item.category?.name}
                       </span>
                     </div>
 
-                    {/* Content */}
-                    <div className="p-5 space-y-3">
-                      <div>
-                        <h3 className="font-bold text-base text-white group-hover:text-emerald-400 transition-colors line-clamp-1">
-                          {item.cropName}
-                        </h3>
-                        {item.location && (
-                          <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                            <MapPin className="w-3 h-3 text-slate-500 flex-shrink-0" />
-                            <span className="truncate">{item.location}</span>
-                          </p>
-                        )}
-                      </div>
+                    <div className="p-4 flex-1 flex flex-col">
+                      <h3 className="font-semibold text-ink group-hover:text-brand-800 transition-colors line-clamp-1">
+                        {item.cropName}
+                      </h3>
+                      {item.location && (
+                        <p className="text-xs text-ink-muted flex items-center gap-1 mt-1">
+                          <MapPin className="w-3 h-3 flex-shrink-0 text-brand-700" />
+                          <span className="truncate">{item.location}</span>
+                        </p>
+                      )}
 
-                      {/* Price and Quantity Pills */}
-                      <div className="flex items-baseline justify-between pt-1">
+                      <div className="mt-auto pt-3 flex items-end justify-between border-t border-line">
                         <div>
-                          <div className="text-xs text-slate-500">Price</div>
-                          <div className="text-lg font-bold text-emerald-400 font-mono">
-                            ₹{Number(item.pricePerUnit).toLocaleString('en-IN')}
-                            <span className="text-xs font-normal text-slate-400"> / {item.unit}</span>
-                          </div>
+                          <span className="text-[11px] text-ink-subtle block">{t('common.price', 'Price')}</span>
+                          <span className="text-lg font-semibold text-brand-800">
+                            {formatCurrency(item.pricePerUnit)}
+                          </span>
+                          <span className="text-xs text-ink-subtle ml-0.5">/{item.unit}</span>
                         </div>
-
                         <div className="text-right">
-                          <div className="text-xs text-slate-500">Available</div>
-                          <div className="text-sm font-semibold text-slate-200 font-mono">
-                            {Number(item.quantity).toLocaleString('en-IN')} {item.unit}
-                          </div>
+                          <span className="text-[11px] text-ink-subtle block">{t('marketplace.available', 'Available')}</span>
+                          <span className="text-xs font-semibold text-ink">
+                            {formatNumber(item.quantity)} {item.unit}
+                          </span>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Footer with Farmer info */}
-                  <div className="px-5 py-3 border-t border-slate-800/80 bg-slate-950/40 text-xs flex items-center justify-between">
-                    <span className="text-slate-400 truncate">
-                      Farmer: <strong className="text-slate-300">{farmerUser?.name || farmer?.farmName || 'Verified Farmer'}</strong>
-                    </span>
-                    <span className="text-emerald-400 font-semibold group-hover:translate-x-0.5 transition-transform">
-                      View Details &rarr;
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+                    <div className="px-4 py-2.5 bg-surface-muted/60 border-t border-line text-xs flex items-center justify-between">
+                      <span className="text-ink-muted truncate flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
+                        <span className="truncate">{farmerUser?.name || farmer?.farmName || t('cropDetail.verifiedSeller', 'Verified Producer')}</span>
+                      </span>
+                      <span className="text-brand-800 font-semibold group-hover:translate-x-0.5 transition-transform shrink-0">
+                        {t('common.view', 'View')} &rarr;
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
 
-        {/* Pagination Bar */}
-        {pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-800 pt-6">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1 || loading}
-              className="px-4 py-2 bg-slate-900 border border-slate-800 text-slate-300 text-xs font-medium rounded-xl hover:bg-slate-800 disabled:opacity-40 transition-colors cursor-pointer flex items-center gap-1"
-            >
-              <ChevronLeft className="w-4 h-4" /> Previous
-            </button>
-
-            <span className="text-xs font-mono text-slate-400">
-              Page {page} of {pagination.totalPages}
-            </span>
-
-            <button
-              onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-              disabled={page >= pagination.totalPages || loading}
-              className="px-4 py-2 bg-slate-900 border border-slate-800 text-slate-300 text-xs font-medium rounded-xl hover:bg-slate-800 disabled:opacity-40 transition-colors cursor-pointer flex items-center gap-1"
-            >
-              Next <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+            <Pagination
+              page={page}
+              totalPages={pagination.totalPages}
+              onChange={setPage}
+            />
+          </>
         )}
       </main>
+
+      <Footer />
+    </div>
+  );
+}
+
+function FilterField({ label, children }) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-ink-muted mb-1">{label}</label>
+      {children}
     </div>
   );
 }

@@ -4,7 +4,6 @@ import {
   Users,
   Sprout,
   ShoppingBag,
-  CreditCard,
   Truck,
   AlertTriangle,
   FileText,
@@ -12,19 +11,15 @@ import {
   Search,
   Filter,
   CheckCircle2,
-  XCircle,
   AlertCircle,
   ChevronLeft,
   ChevronRight,
   UserCheck,
-  UserX,
-  Eye,
-  Send,
-  Calendar,
   DollarSign,
   ArrowUpRight,
   ShieldAlert,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Navbar from '../components/Navbar';
 import {
   fetchAdminStatsApi,
@@ -34,14 +29,15 @@ import {
   fetchAdminListingsApi,
   moderateListingApi,
   fetchAdminOrdersApi,
-  fetchAdminPaymentsApi,
-  fetchAdminDeliveriesApi,
-  fetchAdminComplaintsApi,
   updateComplaintApi,
   fetchAdminAuditLogsApi,
+  fetchAdminComplaintsApi,
 } from '../services/api';
+import { getCropImageUrl, handleImageFallback } from '../utils/cropImages';
+import { formatCurrency, formatNumber, formatDate } from '../utils/formatters';
 
 export default function AdminDashboard() {
+  const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState('overview'); // overview, users, listings, orders, complaints, audit
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -317,25 +313,25 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between">
+    <div className="min-h-screen bg-canvas text-ink flex flex-col">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto w-full p-4 sm:p-8 space-y-6 flex-1">
+      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1 fade-in">
         {/* Top Header Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
           <div className="flex items-center space-x-3.5">
-            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-amber-400">
-              <ShieldCheck className="w-8 h-8" />
+            <div className="p-2.5 bg-brand-50 border border-brand-100 rounded-xl text-brand-800">
+              <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2.5">
-                <h1 className="text-2xl font-bold tracking-tight text-white">FarmDex Administration</h1>
-                <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold uppercase">
-                  Production Ops
+                <h1 className="text-2xl font-bold tracking-tight text-ink">{t('admin.title')}</h1>
+                <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-800 border border-brand-200 uppercase">
+                  FarmDex Ops
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-400">
-                Platform Governance, Produce Moderation, Dispute Resolution &amp; Auditing
+              <p className="text-xs sm:text-sm text-ink-muted mt-0.5">
+                {t('admin.subtitle')}
               </p>
             </div>
           </div>
@@ -350,41 +346,41 @@ export default function AdminDashboard() {
                 if (activeTab === 'complaints') loadComplaints(complaintsPagination.page);
                 if (activeTab === 'audit') loadAuditLogs(auditPagination.page);
               }}
-              className="px-3.5 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 rounded-xl transition-all cursor-pointer flex items-center gap-2 text-xs font-medium"
+              className="px-3.5 py-2 bg-surface border border-line hover:bg-surface-muted text-ink rounded-lg shadow-card transition-colors cursor-pointer flex items-center gap-2 text-xs font-medium"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>Refresh Metrics</span>
+              <span>{t('common.refresh')}</span>
             </button>
           </div>
         </div>
 
         {/* Global Notifications */}
         {error && (
-          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <div className="p-4 rounded-xl bg-danger-soft border border-danger-edge text-danger text-sm flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0 text-danger" />
             <span className="flex-1">{error}</span>
-            <button onClick={() => setError(null)} className="text-rose-400 hover:text-rose-200">
+            <button onClick={() => setError(null)} className="text-danger hover:text-red-800 font-bold">
               &times;
             </button>
           </div>
         )}
 
         {successMsg && (
-          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+          <div className="p-4 rounded-xl bg-brand-50 border border-brand-200 text-brand-800 text-sm flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 shrink-0 text-brand-600" />
             <span className="flex-1">{successMsg}</span>
           </div>
         )}
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-slate-800/80">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-line">
           {[
-            { id: 'overview', label: 'Platform Overview', icon: DollarSign },
-            { id: 'users', label: 'User Governance', icon: Users, badge: stats?.users?.total },
-            { id: 'listings', label: 'Produce Moderation', icon: Sprout, badge: stats?.listings?.suspended },
-            { id: 'orders', label: 'Orders & Fulfillment', icon: ShoppingBag, badge: stats?.orders?.total },
-            { id: 'complaints', label: 'Disputes & Complaints', icon: AlertTriangle, badge: stats?.complaints?.open },
-            { id: 'audit', label: 'Security Audit Logs', icon: FileText },
+            { id: 'overview', label: t('admin.tabs.overview'), icon: DollarSign },
+            { id: 'users', label: t('admin.tabs.users'), icon: Users, badge: stats?.users?.total },
+            { id: 'listings', label: t('admin.tabs.listings'), icon: Sprout, badge: stats?.listings?.suspended },
+            { id: 'orders', label: t('admin.tabs.orders'), icon: ShoppingBag, badge: stats?.orders?.total },
+            { id: 'complaints', label: t('admin.tabs.disputes'), icon: AlertTriangle, badge: stats?.complaints?.open },
+            { id: 'audit', label: t('admin.tabs.audit'), icon: FileText },
           ].map((tab) => {
             const Icon = tab.icon;
             const isSelected = activeTab === tab.id;
@@ -392,20 +388,22 @@ export default function AdminDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2.5 rounded-xl font-medium text-xs sm:text-sm whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+                className={`px-4 py-2.5 rounded-lg font-medium text-xs sm:text-sm whitespace-nowrap transition-colors flex items-center gap-2 cursor-pointer ${
                   isSelected
-                    ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-md shadow-amber-950/20'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
+                    ? 'bg-brand-800 text-white shadow-card'
+                    : 'text-ink-muted hover:text-ink hover:bg-surface-sunken border border-transparent'
                 }`}
               >
                 <Icon className="w-4 h-4" />
                 <span>{tab.label}</span>
                 {tab.badge !== undefined && tab.badge > 0 && (
                   <span
-                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
-                      tab.id === 'complaints' && tab.badge > 0
-                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                        : 'bg-slate-800 text-slate-300'
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                      isSelected
+                        ? 'bg-surface/20 text-white'
+                        : tab.id === 'complaints' && tab.badge > 0
+                        ? 'bg-red-100 text-danger'
+                        : 'bg-surface-sunken text-ink'
                     }`}
                   >
                     {tab.badge}
@@ -421,61 +419,61 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             {/* Top KPI Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+              <div className="p-5 rounded-xl bg-surface border border-line shadow-card space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Users</span>
-                  <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">{t('admin.stats.activeUsers')}</span>
+                  <div className="p-2 bg-info-soft text-info rounded-lg">
                     <Users className="w-4 h-4" />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-white font-mono">{stats.users.total}</div>
-                <div className="flex items-center gap-3 text-xs text-slate-400">
-                  <span className="text-emerald-400 font-mono">{stats.users.farmers} Farmers</span>
+                <div className="text-2xl font-bold text-ink font-mono">{formatNumber(stats.users.total, i18n.language)}</div>
+                <div className="flex items-center gap-3 text-xs text-ink-muted">
+                  <span className="text-brand-800 font-medium">{formatNumber(stats.users.farmers, i18n.language)} {t('auth.roleFarmer')}</span>
                   <span>&bull;</span>
-                  <span className="text-blue-400 font-mono">{stats.users.buyers} Buyers</span>
+                  <span className="text-info font-medium">{formatNumber(stats.users.buyers, i18n.language)} {t('auth.roleBuyer')}</span>
                 </div>
               </div>
 
-              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+              <div className="p-5 rounded-xl bg-surface border border-line shadow-card space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Settled Revenue</span>
-                  <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">{t('admin.stats.totalGmv')}</span>
+                  <div className="p-2 bg-brand-50 text-brand-800 rounded-lg">
                     <DollarSign className="w-4 h-4" />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-emerald-400 font-mono">
-                  ₹{Number(stats.payments.totalSettledRevenue || 0).toLocaleString('en-IN')}
+                <div className="text-2xl font-bold text-brand-800 font-mono">
+                  {formatCurrency(stats.payments.totalSettledRevenue || 0, i18n.language)}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <span className="text-slate-300 font-mono">{stats.payments.success} settled transactions</span>
+                <div className="flex items-center gap-2 text-xs text-ink-muted">
+                  <span>{formatNumber(stats.payments.success, i18n.language)} {t('status.confirmed')}</span>
                 </div>
               </div>
 
-              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+              <div className="p-5 rounded-xl bg-surface border border-line shadow-card space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Marketplace Produce</span>
-                  <div className="p-2 bg-amber-500/10 rounded-lg text-amber-400">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Marketplace Produce</span>
+                  <div className="p-2 bg-warning-soft text-warning rounded-lg">
                     <Sprout className="w-4 h-4" />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-white font-mono">{stats.listings.total}</div>
-                <div className="flex items-center gap-3 text-xs text-slate-400">
-                  <span className="text-emerald-400 font-mono">{stats.listings.active} Active</span>
+                <div className="text-2xl font-bold text-ink font-mono">{stats.listings.total}</div>
+                <div className="flex items-center gap-3 text-xs text-ink-muted">
+                  <span className="text-brand-800 font-medium">{stats.listings.active} Active</span>
                   <span>&bull;</span>
-                  <span className="text-rose-400 font-mono">{stats.listings.suspended} Suspended</span>
+                  <span className="text-danger font-medium">{stats.listings.suspended} Suspended</span>
                 </div>
               </div>
 
-              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-3">
+              <div className="p-5 rounded-xl bg-surface border border-line shadow-card space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Open Disputes</span>
-                  <div className="p-2 bg-rose-500/10 rounded-lg text-rose-400">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Open Disputes</span>
+                  <div className="p-2 bg-danger-soft text-danger rounded-lg">
                     <AlertTriangle className="w-4 h-4" />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-rose-400 font-mono">{stats.complaints.open}</div>
-                <div className="flex items-center gap-2 text-xs text-slate-400">
-                  <span className="text-slate-300 font-mono">{stats.complaints.resolved} resolved cases</span>
+                <div className="text-2xl font-bold text-danger font-mono">{stats.complaints.open}</div>
+                <div className="flex items-center gap-2 text-xs text-ink-muted">
+                  <span>{stats.complaints.resolved} resolved cases</span>
                 </div>
               </div>
             </div>
@@ -483,119 +481,119 @@ export default function AdminDashboard() {
             {/* Quick Status Breakdown Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* Order Fulfillment Breakdown */}
-              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-                <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                  <ShoppingBag className="w-4 h-4 text-emerald-400" /> Order Fulfillment Pipeline
+              <div className="p-5 rounded-xl bg-surface border border-line space-y-4 shadow-card">
+                <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4 text-brand-800" /> Order Fulfillment Pipeline
                 </h3>
-                <div className="space-y-2 text-xs font-mono">
-                  <div className="flex justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                    <span className="text-slate-400">Pending Orders</span>
-                    <span className="text-amber-400 font-bold">{stats.orders.pending}</span>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between p-2 rounded-lg bg-surface-muted border border-line">
+                    <span className="text-ink-muted">Pending Orders</span>
+                    <span className="text-warning font-bold font-mono">{stats.orders.pending}</span>
                   </div>
-                  <div className="flex justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                    <span className="text-slate-400">Dispatched / In-Transit</span>
-                    <span className="text-blue-400 font-bold">{stats.orders.shipped}</span>
+                  <div className="flex justify-between p-2 rounded-lg bg-surface-muted border border-line">
+                    <span className="text-ink-muted">Dispatched / In-Transit</span>
+                    <span className="text-info font-bold font-mono">{stats.orders.shipped}</span>
                   </div>
-                  <div className="flex justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                    <span className="text-slate-400">Delivered Orders</span>
-                    <span className="text-emerald-400 font-bold">{stats.orders.delivered}</span>
+                  <div className="flex justify-between p-2 rounded-lg bg-surface-muted border border-line">
+                    <span className="text-ink-muted">Delivered Orders</span>
+                    <span className="text-brand-800 font-bold font-mono">{stats.orders.delivered}</span>
                   </div>
-                  <div className="flex justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                    <span className="text-slate-400">Cancelled Orders</span>
-                    <span className="text-slate-500 font-bold">{stats.orders.cancelled}</span>
+                  <div className="flex justify-between p-2 rounded-lg bg-surface-muted border border-line">
+                    <span className="text-ink-muted">Cancelled Orders</span>
+                    <span className="text-ink-muted font-bold font-mono">{stats.orders.cancelled}</span>
                   </div>
                 </div>
               </div>
 
               {/* Consignment Delivery Breakdown */}
-              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-                <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                  <Truck className="w-4 h-4 text-blue-400" /> Logistics &amp; Shipping
+              <div className="p-5 rounded-xl bg-surface border border-line space-y-4 shadow-card">
+                <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-info" /> Logistics &amp; Shipping
                 </h3>
-                <div className="space-y-2 text-xs font-mono">
-                  <div className="flex justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                    <span className="text-slate-400">Active Shipments</span>
-                    <span className="text-blue-400 font-bold">{stats.deliveries.inTransit}</span>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between p-2 rounded-lg bg-surface-muted border border-line">
+                    <span className="text-ink-muted">Active Shipments</span>
+                    <span className="text-info font-bold font-mono">{stats.deliveries.inTransit}</span>
                   </div>
-                  <div className="flex justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                    <span className="text-slate-400">Completed Deliveries</span>
-                    <span className="text-emerald-400 font-bold">{stats.deliveries.delivered}</span>
+                  <div className="flex justify-between p-2 rounded-lg bg-surface-muted border border-line">
+                    <span className="text-ink-muted">Completed Deliveries</span>
+                    <span className="text-brand-800 font-bold font-mono">{stats.deliveries.delivered}</span>
                   </div>
-                  <div className="flex justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                    <span className="text-slate-400">Total Waybills Issued</span>
-                    <span className="text-slate-300 font-bold">{stats.deliveries.total}</span>
+                  <div className="flex justify-between p-2 rounded-lg bg-surface-muted border border-line">
+                    <span className="text-ink-muted">Total Waybills Issued</span>
+                    <span className="text-ink font-bold font-mono">{stats.deliveries.total}</span>
                   </div>
                 </div>
               </div>
 
               {/* User Account Integrity */}
-              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-                <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-amber-400" /> User Verification &amp; Security
+              <div className="p-5 rounded-xl bg-surface border border-line space-y-4 shadow-card">
+                <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-brand-800" /> User Verification &amp; Security
                 </h3>
-                <div className="space-y-2 text-xs font-mono">
-                  <div className="flex justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                    <span className="text-slate-400">Active Users</span>
-                    <span className="text-emerald-400 font-bold">{stats.users.active}</span>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between p-2 rounded-lg bg-surface-muted border border-line">
+                    <span className="text-ink-muted">Active Users</span>
+                    <span className="text-brand-800 font-bold font-mono">{stats.users.active}</span>
                   </div>
-                  <div className="flex justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                    <span className="text-slate-400">Verified Profiles</span>
-                    <span className="text-blue-400 font-bold">{stats.users.verified}</span>
+                  <div className="flex justify-between p-2 rounded-lg bg-surface-muted border border-line">
+                    <span className="text-ink-muted">Verified Profiles</span>
+                    <span className="text-info font-bold font-mono">{stats.users.verified}</span>
                   </div>
-                  <div className="flex justify-between p-2 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                    <span className="text-slate-400">Suspended / Inactive</span>
-                    <span className="text-rose-400 font-bold">{stats.users.inactive}</span>
+                  <div className="flex justify-between p-2 rounded-lg bg-surface-muted border border-line">
+                    <span className="text-ink-muted">Suspended / Inactive</span>
+                    <span className="text-danger font-bold font-mono">{stats.users.inactive}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Recent Orders Snapshot */}
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
+            <div className="p-5 rounded-xl bg-surface border border-line space-y-4 shadow-card">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                  <ShoppingBag className="w-4 h-4 text-emerald-400" /> Recent Platform Orders
+                <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4 text-brand-800" /> Recent Platform Orders
                 </h3>
                 <button
                   onClick={() => setActiveTab('orders')}
-                  className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
+                  className="text-xs text-brand-800 hover:text-brand-800 font-medium flex items-center gap-1 cursor-pointer"
                 >
-                  View All Orders <ArrowUpRight className="w-3.5 h-3.5" />
+                  {t('common.viewAll')} <ArrowUpRight className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-mono">
+                <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-slate-800 text-slate-400 uppercase">
-                      <th className="pb-3 font-medium">Order ID</th>
-                      <th className="pb-3 font-medium">Buyer</th>
-                      <th className="pb-3 font-medium">Farmer</th>
-                      <th className="pb-3 font-medium">Amount</th>
-                      <th className="pb-3 font-medium">Payment</th>
-                      <th className="pb-3 font-medium">Delivery</th>
+                    <tr className="border-b border-line text-ink-muted uppercase text-[11px] font-semibold">
+                      <th className="pb-3">{t('orders.title')}</th>
+                      <th className="pb-3">{t('orders.card.buyer')}</th>
+                      <th className="pb-3">{t('orders.card.farmer')}</th>
+                      <th className="pb-3">{t('common.amount')}</th>
+                      <th className="pb-3">{t('orders.card.payment')}</th>
+                      <th className="pb-3">{t('orders.card.delivery')}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60">
+                  <tbody className="divide-y divide-line">
                     {stats.recent.orders.map((ord) => (
-                      <tr key={ord.id} className="hover:bg-slate-950/40">
-                        <td className="py-2.5 text-slate-300 font-bold">{ord.id.slice(0, 8)}...</td>
-                        <td className="py-2.5 text-slate-300">{ord.buyer?.name}</td>
-                        <td className="py-2.5 text-slate-300">{ord.farmer?.name}</td>
-                        <td className="py-2.5 text-emerald-400 font-bold">₹{Number(ord.totalAmount).toLocaleString('en-IN')}</td>
+                      <tr key={ord.id} className="hover:bg-surface-muted/70">
+                        <td className="py-2.5 font-mono text-brand-800 font-bold">#{ord.id.slice(0, 8)}</td>
+                        <td className="py-2.5 text-ink">{ord.buyer?.name}</td>
+                        <td className="py-2.5 text-ink">{ord.farmer?.name}</td>
+                        <td className="py-2.5 text-brand-800 font-bold font-mono">{formatCurrency(ord.totalAmount, i18n.language)}</td>
                         <td className="py-2.5">
                           <span
-                            className={`px-2 py-0.5 rounded text-[10px] ${
+                            className={`px-2 py-0.5 rounded text-[10px] font-medium ${
                               ord.payment?.status === 'SUCCESS'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                ? 'bg-success-soft text-success border border-success-edge'
+                                : 'bg-warning-soft text-warning border border-warning-edge'
                             }`}
                           >
                             {ord.payment?.status || 'PENDING'}
                           </span>
                         </td>
                         <td className="py-2.5">
-                          <span className="px-2 py-0.5 rounded text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-info-soft text-info border border-blue-200">
                             {ord.delivery?.status || 'PENDING'}
                           </span>
                         </td>
@@ -612,27 +610,27 @@ export default function AdminDashboard() {
         {activeTab === 'users' && (
           <div className="space-y-4">
             {/* Filter Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-surface border border-line rounded-xl shadow-card">
               <div className="relative flex-1">
-                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <Search className="w-4 h-4 text-ink-subtle absolute left-3 top-2.5" />
                 <input
                   type="text"
                   placeholder="Search users by name, email, or phone..."
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && loadUsers(1)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono placeholder-slate-600 focus:outline-none focus:border-amber-500 transition-all text-slate-200"
+                  className="w-full pl-9 pr-4 py-2 bg-surface-muted border border-line rounded-lg text-xs placeholder:text-ink-subtle focus:bg-surface focus:outline-none focus:border-brand-500 transition-colors text-ink"
                 />
               </div>
 
               <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-slate-500" />
+                <Filter className="w-4 h-4 text-ink-subtle" />
                 <select
                   value={userRoleFilter}
                   onChange={(e) => {
                     setUserRoleFilter(e.target.value);
                   }}
-                  className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-300 focus:outline-none focus:border-amber-500"
+                  className="px-3 py-2 bg-surface border border-line rounded-lg text-xs font-medium text-ink focus:outline-none focus:border-brand-500"
                 >
                   <option value="ALL">All Roles</option>
                   <option value="FARMER">Farmers</option>
@@ -642,7 +640,7 @@ export default function AdminDashboard() {
 
                 <button
                   onClick={() => loadUsers(1)}
-                  className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded-xl transition-all cursor-pointer"
+                  className="px-3.5 py-2 bg-brand-800 hover:bg-brand-800 text-white text-xs font-medium rounded-lg shadow-sm transition-colors cursor-pointer"
                 >
                   Apply Filters
                 </button>
@@ -650,73 +648,73 @@ export default function AdminDashboard() {
             </div>
 
             {/* Users Table */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-              <div className="flex items-center justify-between text-xs text-slate-400">
+            <div className="p-4 sm:p-5 rounded-xl bg-surface border border-line shadow-card space-y-4">
+              <div className="flex items-center justify-between text-xs text-ink-muted">
                 <span>
-                  Showing <strong className="text-white font-mono">{users.length}</strong> of{' '}
-                  <strong className="text-white font-mono">{usersPagination.totalCount}</strong> users
+                  Showing <strong className="text-ink">{users.length}</strong> of{' '}
+                  <strong className="text-ink">{usersPagination.totalCount}</strong> users
                 </span>
                 <span>Page {usersPagination.page} of {usersPagination.totalPages}</span>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-mono">
+                <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-slate-800 text-slate-400 uppercase">
-                      <th className="pb-3 font-medium">User / Identity</th>
-                      <th className="pb-3 font-medium">Role</th>
-                      <th className="pb-3 font-medium">Profile Metadata</th>
-                      <th className="pb-3 font-medium">Verification</th>
-                      <th className="pb-3 font-medium">Account Status</th>
-                      <th className="pb-3 font-medium text-right">Actions</th>
+                    <tr className="border-b border-line text-ink-muted uppercase text-[11px] font-semibold">
+                      <th className="pb-3">User / Identity</th>
+                      <th className="pb-3">Role</th>
+                      <th className="pb-3">Profile Metadata</th>
+                      <th className="pb-3">Verification</th>
+                      <th className="pb-3">Account Status</th>
+                      <th className="pb-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60">
+                  <tbody className="divide-y divide-line">
                     {users.map((usr) => (
-                      <tr key={usr.id} className="hover:bg-slate-950/40">
+                      <tr key={usr.id} className="hover:bg-surface-muted/70">
                         <td className="py-3">
-                          <div className="font-sans font-bold text-slate-200">{usr.name}</div>
-                          <div className="text-[11px] text-slate-400">{usr.email}</div>
-                          {usr.phone && <div className="text-[10px] text-slate-500">{usr.phone}</div>}
+                          <div className="font-bold text-ink">{usr.name}</div>
+                          <div className="text-[11px] text-ink-muted">{usr.email}</div>
+                          {usr.phone && <div className="text-[10px] text-ink-subtle font-mono">{usr.phone}</div>}
                         </td>
                         <td className="py-3">
                           <span
                             className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                               usr.role === 'ADMIN'
-                                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                                ? 'bg-warning-soft text-warning border border-warning-edge'
                                 : usr.role === 'FARMER'
-                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                                : 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                                ? 'bg-success-soft text-success border border-success-edge'
+                                : 'bg-info-soft text-info border border-blue-200'
                             }`}
                           >
                             {usr.role}
                           </span>
                         </td>
-                        <td className="py-3 text-slate-400 text-[11px]">
+                        <td className="py-3 text-ink-muted text-[11px]">
                           {usr.farmerProfile && (
                             <div>
-                              <span>{usr.farmerProfile.farmName || 'Unnamed Farm'}</span>
-                              <span className="text-slate-600 block">
+                              <span className="font-medium text-ink">{usr.farmerProfile.farmName || 'Unnamed Farm'}</span>
+                              <span className="text-ink-subtle block">
                                 {usr.farmerProfile.district ? `${usr.farmerProfile.district}, ${usr.farmerProfile.state}` : 'Location unconfigured'}
                               </span>
                             </div>
                           )}
                           {usr.buyerProfile && (
                             <div>
-                              <span>{usr.buyerProfile.businessName || 'Independent Buyer'}</span>
-                              <span className="text-slate-600 block">{usr.buyerProfile.businessType || 'Retail'}</span>
+                              <span className="font-medium text-ink">{usr.buyerProfile.businessName || 'Independent Buyer'}</span>
+                              <span className="text-ink-subtle block">{usr.buyerProfile.businessType || 'Retail'}</span>
                             </div>
                           )}
-                          {!usr.farmerProfile && !usr.buyerProfile && <span className="text-slate-600">No profile extension</span>}
+                          {!usr.farmerProfile && !usr.buyerProfile && <span className="text-ink-subtle">No profile extension</span>}
                         </td>
                         <td className="py-3">
                           <button
                             onClick={() => handleToggleUserVerification(usr)}
                             disabled={userActionLoading[usr.id]}
-                            className={`px-2 py-0.5 rounded text-[10px] font-semibold cursor-pointer transition-all ${
+                            className={`px-2.5 py-1 rounded-md text-[10px] font-semibold cursor-pointer transition-colors ${
                               usr.isVerified
-                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20'
-                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                ? 'bg-info-soft text-info border border-blue-200 hover:bg-blue-100'
+                                : 'bg-surface-sunken text-ink-muted hover:bg-surface-muted'
                             }`}
                           >
                             {usr.isVerified ? 'VERIFIED' : 'UNVERIFIED'}
@@ -726,8 +724,8 @@ export default function AdminDashboard() {
                           <span
                             className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                               usr.isActive
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                ? 'bg-success-soft text-success border border-success-edge'
+                                : 'bg-danger-soft text-danger border border-danger-edge'
                             }`}
                           >
                             {usr.isActive ? 'ACTIVE' : 'DEACTIVATED'}
@@ -737,10 +735,10 @@ export default function AdminDashboard() {
                           <button
                             onClick={() => handleToggleUserStatus(usr)}
                             disabled={userActionLoading[usr.id]}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-all ${
+                            className={`px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
                               usr.isActive
-                                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20'
-                                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20'
+                                ? 'bg-danger-soft text-danger border border-danger-edge hover:bg-red-100'
+                                : 'bg-success-soft text-success border border-success-edge hover:bg-emerald-100'
                             }`}
                           >
                             {usr.isActive ? 'Deactivate' : 'Activate'}
@@ -753,21 +751,21 @@ export default function AdminDashboard() {
               </div>
 
               {/* Pagination */}
-              <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-between pt-3 border-t border-line">
                 <button
                   disabled={usersPagination.page <= 1}
                   onClick={() => loadUsers(usersPagination.page - 1)}
-                  className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                  className="px-3 py-1.5 bg-surface border border-line hover:bg-surface-muted rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" /> Previous
                 </button>
-                <span className="text-xs text-slate-500 font-mono">
+                <span className="text-xs text-ink-muted">
                   {usersPagination.page} / {usersPagination.totalPages}
                 </span>
                 <button
                   disabled={usersPagination.page >= usersPagination.totalPages}
                   onClick={() => loadUsers(usersPagination.page + 1)}
-                  className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                  className="px-3 py-1.5 bg-surface border border-line hover:bg-surface-muted rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
                 >
                   Next <ChevronRight className="w-3.5 h-3.5" />
                 </button>
@@ -780,25 +778,25 @@ export default function AdminDashboard() {
         {activeTab === 'listings' && (
           <div className="space-y-4">
             {/* Filter Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-surface border border-line rounded-xl shadow-card">
               <div className="relative flex-1">
-                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <Search className="w-4 h-4 text-ink-subtle absolute left-3 top-2.5" />
                 <input
                   type="text"
                   placeholder="Search listings by crop name or location..."
                   value={listingSearch}
                   onChange={(e) => setListingSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && loadListings(1)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono placeholder-slate-600 focus:outline-none focus:border-amber-500 transition-all text-slate-200"
+                  className="w-full pl-9 pr-4 py-2 bg-surface-muted border border-line rounded-lg text-xs placeholder:text-ink-subtle focus:bg-surface focus:outline-none focus:border-brand-500 transition-colors text-ink"
                 />
               </div>
 
               <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-slate-500" />
+                <Filter className="w-4 h-4 text-ink-subtle" />
                 <select
                   value={listingStatusFilter}
                   onChange={(e) => setListingStatusFilter(e.target.value)}
-                  className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-300 focus:outline-none focus:border-amber-500"
+                  className="px-3 py-2 bg-surface border border-line rounded-lg text-xs font-medium text-ink focus:outline-none focus:border-brand-500"
                 >
                   <option value="ALL">All Statuses</option>
                   <option value="ACTIVE">ACTIVE</option>
@@ -809,7 +807,7 @@ export default function AdminDashboard() {
 
                 <button
                   onClick={() => loadListings(1)}
-                  className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded-xl transition-all cursor-pointer"
+                  className="px-3.5 py-2 bg-brand-800 hover:bg-brand-800 text-white text-xs font-medium rounded-lg shadow-sm transition-colors cursor-pointer"
                 >
                   Filter
                 </button>
@@ -817,53 +815,65 @@ export default function AdminDashboard() {
             </div>
 
             {/* Listings Table */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-              <div className="flex items-center justify-between text-xs text-slate-400">
+            <div className="p-4 sm:p-5 rounded-xl bg-surface border border-line shadow-card space-y-4">
+              <div className="flex items-center justify-between text-xs text-ink-muted">
                 <span>
-                  Showing <strong className="text-white font-mono">{listings.length}</strong> of{' '}
-                  <strong className="text-white font-mono">{listingsPagination.totalCount}</strong> listings
+                  Showing <strong className="text-ink">{listings.length}</strong> of{' '}
+                  <strong className="text-ink">{listingsPagination.totalCount}</strong> listings
                 </span>
                 <span>Page {listingsPagination.page} of {listingsPagination.totalPages}</span>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-mono">
+                <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-slate-800 text-slate-400 uppercase">
-                      <th className="pb-3 font-medium">Produce Item</th>
-                      <th className="pb-3 font-medium">Farmer</th>
-                      <th className="pb-3 font-medium">Quantity &amp; Price</th>
-                      <th className="pb-3 font-medium">Location</th>
-                      <th className="pb-3 font-medium">Status</th>
-                      <th className="pb-3 font-medium text-right">Moderation Action</th>
+                    <tr className="border-b border-line text-ink-muted uppercase text-[11px] font-semibold">
+                      <th className="pb-3">Produce Item</th>
+                      <th className="pb-3">Farmer</th>
+                      <th className="pb-3">Quantity &amp; Price</th>
+                      <th className="pb-3">Location</th>
+                      <th className="pb-3">Status</th>
+                      <th className="pb-3 text-right">Moderation Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60">
+                  <tbody className="divide-y divide-line">
                     {listings.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-950/40">
+                      <tr key={item.id} className="hover:bg-surface-muted/70">
                         <td className="py-3">
-                          <div className="font-sans font-bold text-slate-200">{item.cropName}</div>
-                          <span className="text-[10px] text-amber-400">{item.category?.name}</span>
-                        </td>
-                        <td className="py-3 text-slate-300">
-                          <div>{item.farmerProfile?.user?.name}</div>
-                          <div className="text-[10px] text-slate-500">{item.farmerProfile?.user?.email}</div>
-                        </td>
-                        <td className="py-3">
-                          <div className="text-slate-200">
-                            {Number(item.quantity).toLocaleString()} {item.unit}
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-lg bg-surface-sunken border border-line overflow-hidden shrink-0">
+                              <img
+                                src={getCropImageUrl(item.cropName, item.category?.name, item.productImages?.[0]?.imageUrl)}
+                                alt={item.cropName}
+                                onError={(e) => handleImageFallback(e, item.cropName, item.category?.name)}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div>
+                              <div className="font-bold text-ink">{item.cropName}</div>
+                              <span className="text-[10px] text-ink-muted">{item.category?.name}</span>
+                            </div>
                           </div>
-                          <div className="text-emerald-400 font-bold">₹{Number(item.pricePerUnit).toLocaleString('en-IN')}/{item.unit}</div>
                         </td>
-                        <td className="py-3 text-slate-400 text-[11px]">{item.location || 'Not provided'}</td>
+                        <td className="py-3 text-ink">
+                          <div>{item.farmerProfile?.user?.name}</div>
+                          <div className="text-[10px] text-ink-subtle">{item.farmerProfile?.user?.email}</div>
+                        </td>
+                        <td className="py-3">
+                          <div className="text-ink">
+                            {formatNumber(item.quantity, i18n.language)} {item.unit}
+                          </div>
+                          <div className="text-brand-800 font-bold font-mono">{formatCurrency(item.pricePerUnit, i18n.language)}/{item.unit}</div>
+                        </td>
+                        <td className="py-3 text-ink-muted text-[11px]">{item.location || 'Not provided'}</td>
                         <td className="py-3">
                           <span
                             className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                               item.status === 'ACTIVE'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                ? 'bg-success-soft text-success border border-success-edge'
                                 : item.status === 'SUSPENDED'
-                                ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-                                : 'bg-slate-800 text-slate-400'
+                                ? 'bg-danger-soft text-danger border border-danger-edge'
+                                : 'bg-surface-sunken text-ink-muted'
                             }`}
                           >
                             {item.status}
@@ -874,7 +884,7 @@ export default function AdminDashboard() {
                             <button
                               onClick={() => handleModerateListing(item, 'ACTIVE')}
                               disabled={listingActionLoading[item.id]}
-                              className="px-2.5 py-1 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-semibold cursor-pointer transition-all"
+                              className="px-2.5 py-1 bg-success-soft hover:bg-emerald-100 text-success border border-success-edge rounded-lg text-xs font-semibold cursor-pointer transition-colors"
                             >
                               Reinstate
                             </button>
@@ -882,7 +892,7 @@ export default function AdminDashboard() {
                             <button
                               onClick={() => handleModerateListing(item, 'SUSPENDED')}
                               disabled={listingActionLoading[item.id]}
-                              className="px-2.5 py-1 bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 rounded-lg text-xs font-semibold cursor-pointer transition-all"
+                              className="px-2.5 py-1 bg-danger-soft hover:bg-red-100 text-danger border border-danger-edge rounded-lg text-xs font-semibold cursor-pointer transition-colors"
                             >
                               Suspend
                             </button>
@@ -895,21 +905,21 @@ export default function AdminDashboard() {
               </div>
 
               {/* Pagination */}
-              <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-between pt-3 border-t border-line">
                 <button
                   disabled={listingsPagination.page <= 1}
                   onClick={() => loadListings(listingsPagination.page - 1)}
-                  className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                  className="px-3 py-1.5 bg-surface border border-line hover:bg-surface-muted rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" /> Previous
                 </button>
-                <span className="text-xs text-slate-500 font-mono">
+                <span className="text-xs text-ink-muted">
                   {listingsPagination.page} / {listingsPagination.totalPages}
                 </span>
                 <button
                   disabled={listingsPagination.page >= listingsPagination.totalPages}
                   onClick={() => loadListings(listingsPagination.page + 1)}
-                  className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                  className="px-3 py-1.5 bg-surface border border-line hover:bg-surface-muted rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
                 >
                   Next <ChevronRight className="w-3.5 h-3.5" />
                 </button>
@@ -922,25 +932,25 @@ export default function AdminDashboard() {
         {activeTab === 'orders' && (
           <div className="space-y-4">
             {/* Filter Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-surface border border-line rounded-xl shadow-card">
               <div className="relative flex-1">
-                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <Search className="w-4 h-4 text-ink-subtle absolute left-3 top-2.5" />
                 <input
                   type="text"
                   placeholder="Search orders by ID, buyer or farmer name/email..."
                   value={orderSearch}
                   onChange={(e) => setOrderSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && loadOrders(1)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono placeholder-slate-600 focus:outline-none focus:border-amber-500 transition-all text-slate-200"
+                  className="w-full pl-9 pr-4 py-2 bg-surface-muted border border-line rounded-lg text-xs placeholder:text-ink-subtle focus:bg-surface focus:outline-none focus:border-brand-500 transition-colors text-ink"
                 />
               </div>
 
               <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-slate-500" />
+                <Filter className="w-4 h-4 text-ink-subtle" />
                 <select
                   value={orderStatusFilter}
                   onChange={(e) => setOrderStatusFilter(e.target.value)}
-                  className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-300 focus:outline-none focus:border-amber-500"
+                  className="px-3 py-2 bg-surface border border-line rounded-lg text-xs font-medium text-ink focus:outline-none focus:border-brand-500"
                 >
                   <option value="ALL">All Order Statuses</option>
                   <option value="PENDING">PENDING</option>
@@ -952,7 +962,7 @@ export default function AdminDashboard() {
 
                 <button
                   onClick={() => loadOrders(1)}
-                  className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded-xl transition-all cursor-pointer"
+                  className="px-3.5 py-2 bg-brand-800 hover:bg-brand-800 text-white text-xs font-medium rounded-lg shadow-sm transition-colors cursor-pointer"
                 >
                   Filter
                 </button>
@@ -960,61 +970,61 @@ export default function AdminDashboard() {
             </div>
 
             {/* Orders Table */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
-              <div className="flex items-center justify-between text-xs text-slate-400">
+            <div className="p-4 sm:p-5 rounded-xl bg-surface border border-line shadow-card space-y-4">
+              <div className="flex items-center justify-between text-xs text-ink-muted">
                 <span>
-                  Showing <strong className="text-white font-mono">{orders.length}</strong> of{' '}
-                  <strong className="text-white font-mono">{ordersPagination.totalCount}</strong> orders
+                  Showing <strong className="text-ink">{orders.length}</strong> of{' '}
+                  <strong className="text-ink">{ordersPagination.totalCount}</strong> orders
                 </span>
                 <span>Page {ordersPagination.page} of {ordersPagination.totalPages}</span>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-mono">
+                <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-slate-800 text-slate-400 uppercase">
-                      <th className="pb-3 font-medium">Order Reference</th>
-                      <th className="pb-3 font-medium">Buyer</th>
-                      <th className="pb-3 font-medium">Farmer</th>
-                      <th className="pb-3 font-medium">Items Snapshot</th>
-                      <th className="pb-3 font-medium">Total Amount</th>
-                      <th className="pb-3 font-medium">Payment</th>
-                      <th className="pb-3 font-medium">Consignment Tracking</th>
+                    <tr className="border-b border-line text-ink-muted uppercase text-[11px] font-semibold">
+                      <th className="pb-3">Order Reference</th>
+                      <th className="pb-3">Buyer</th>
+                      <th className="pb-3">Farmer</th>
+                      <th className="pb-3">Items Snapshot</th>
+                      <th className="pb-3">Total Amount</th>
+                      <th className="pb-3">Payment</th>
+                      <th className="pb-3">Consignment Tracking</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60">
+                  <tbody className="divide-y divide-line">
                     {orders.map((ord) => (
-                      <tr key={ord.id} className="hover:bg-slate-950/40">
+                      <tr key={ord.id} className="hover:bg-surface-muted/70">
                         <td className="py-3">
-                          <div className="font-bold text-slate-200">#{ord.id.slice(0, 8)}</div>
-                          <div className="text-[10px] text-slate-500">
-                            {new Date(ord.createdAt).toLocaleDateString()}
+                          <div className="font-bold text-brand-800 font-mono">#{ord.id.slice(0, 8)}</div>
+                          <div className="text-[10px] text-ink-subtle">
+                            {new Date(ord.createdAt).toLocaleDateString('en-IN')}
                           </div>
                         </td>
                         <td className="py-3">
-                          <div className="text-slate-300">{ord.buyer?.name}</div>
-                          <div className="text-[10px] text-slate-500">{ord.buyer?.email}</div>
+                          <div className="text-ink font-medium">{ord.buyer?.name}</div>
+                          <div className="text-[10px] text-ink-subtle">{ord.buyer?.email}</div>
                         </td>
                         <td className="py-3">
-                          <div className="text-slate-300">{ord.farmer?.name}</div>
-                          <div className="text-[10px] text-slate-500">{ord.farmer?.email}</div>
+                          <div className="text-ink font-medium">{ord.farmer?.name}</div>
+                          <div className="text-[10px] text-ink-subtle">{ord.farmer?.email}</div>
                         </td>
-                        <td className="py-3 text-slate-400">
+                        <td className="py-3 text-ink-muted">
                           {ord.orderItems?.map((it) => (
                             <div key={it.id}>
                               {it.listing?.cropName}: {Number(it.quantity)} {it.listing?.unit}
                             </div>
                           ))}
                         </td>
-                        <td className="py-3 font-bold text-emerald-400">
-                          ₹{Number(ord.totalAmount).toLocaleString('en-IN')}
+                        <td className="py-3 font-bold text-brand-800 font-mono">
+                          {formatCurrency(ord.totalAmount, i18n.language)}
                         </td>
                         <td className="py-3">
                           <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            className={`px-2 py-0.5 rounded text-[10px] font-medium ${
                               ord.payment?.status === 'SUCCESS'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                ? 'bg-success-soft text-success border border-success-edge'
+                                : 'bg-warning-soft text-warning border border-warning-edge'
                             }`}
                           >
                             {ord.payment?.status || 'PENDING'}
@@ -1023,13 +1033,13 @@ export default function AdminDashboard() {
                         <td className="py-3">
                           {ord.delivery?.trackingNumber ? (
                             <div>
-                              <span className="text-[11px] font-bold text-blue-400 block">
+                              <span className="text-[11px] font-bold font-mono text-brand-800 block">
                                 {ord.delivery.trackingNumber}
                               </span>
-                              <span className="text-[10px] text-slate-500 uppercase">{ord.delivery.status}</span>
+                              <span className="text-[10px] text-ink-muted uppercase">{ord.delivery.status}</span>
                             </div>
                           ) : (
-                            <span className="text-[11px] text-slate-600 italic">Not dispatched</span>
+                            <span className="text-[11px] text-ink-subtle italic">Not dispatched</span>
                           )}
                         </td>
                       </tr>
@@ -1039,21 +1049,21 @@ export default function AdminDashboard() {
               </div>
 
               {/* Pagination */}
-              <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-between pt-3 border-t border-line">
                 <button
                   disabled={ordersPagination.page <= 1}
                   onClick={() => loadOrders(ordersPagination.page - 1)}
-                  className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                  className="px-3 py-1.5 bg-surface border border-line hover:bg-surface-muted rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" /> Previous
                 </button>
-                <span className="text-xs text-slate-500 font-mono">
+                <span className="text-xs text-ink-muted">
                   {ordersPagination.page} / {ordersPagination.totalPages}
                 </span>
                 <button
                   disabled={ordersPagination.page >= ordersPagination.totalPages}
                   onClick={() => loadOrders(ordersPagination.page + 1)}
-                  className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                  className="px-3 py-1.5 bg-surface border border-line hover:bg-surface-muted rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
                 >
                   Next <ChevronRight className="w-3.5 h-3.5" />
                 </button>
@@ -1066,17 +1076,17 @@ export default function AdminDashboard() {
         {activeTab === 'complaints' && (
           <div className="space-y-4">
             {/* Filter Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
-              <div className="text-xs text-slate-400">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-surface border border-line rounded-xl shadow-card">
+              <div className="text-xs text-ink-muted">
                 Review user disputes, buyer claims, and marketplace complaints
               </div>
 
               <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-slate-500" />
+                <Filter className="w-4 h-4 text-ink-subtle" />
                 <select
                   value={complaintStatusFilter}
                   onChange={(e) => setComplaintStatusFilter(e.target.value)}
-                  className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-300 focus:outline-none focus:border-amber-500"
+                  className="px-3 py-2 bg-surface border border-line rounded-lg text-xs font-medium text-ink focus:outline-none focus:border-brand-500"
                 >
                   <option value="ALL">All Complaint Statuses</option>
                   <option value="OPEN">OPEN</option>
@@ -1087,7 +1097,7 @@ export default function AdminDashboard() {
 
                 <button
                   onClick={() => loadComplaints(1)}
-                  className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded-xl transition-all cursor-pointer"
+                  className="px-3.5 py-2 bg-brand-800 hover:bg-brand-800 text-white text-xs font-medium rounded-lg shadow-sm transition-colors cursor-pointer"
                 >
                   Filter
                 </button>
@@ -1097,63 +1107,63 @@ export default function AdminDashboard() {
             {/* Complaints List */}
             <div className="grid grid-cols-1 gap-4">
               {complaints.length === 0 ? (
-                <div className="p-12 text-center bg-slate-900 border border-slate-800 rounded-2xl text-slate-500 text-sm">
+                <div className="p-12 text-center bg-surface border border-line rounded-xl text-ink-muted text-sm shadow-card">
                   No disputes or complaints found matching the selected filter.
                 </div>
               ) : (
                 complaints.map((comp) => (
                   <div
                     key={comp.id}
-                    className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-3 font-mono text-xs"
+                    className="p-5 rounded-xl bg-surface border border-line shadow-card space-y-3 text-xs"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-line pb-3">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-200">Dispute #{comp.id.slice(0, 8)}</span>
+                        <span className="font-bold text-ink">Dispute #{comp.id.slice(0, 8)}</span>
                         <span
                           className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                             comp.status === 'OPEN'
-                              ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                              ? 'bg-danger-soft text-danger border border-danger-edge'
                               : comp.status === 'UNDER_REVIEW'
-                              ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                              ? 'bg-warning-soft text-warning border border-warning-edge'
                               : comp.status === 'RESOLVED'
-                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-slate-800 text-slate-400'
+                              ? 'bg-success-soft text-success border border-success-edge'
+                              : 'bg-surface-sunken text-ink-muted'
                           }`}
                         >
                           {comp.status}
                         </span>
                       </div>
-                      <span className="text-[11px] text-slate-500">
-                        Filed: {new Date(comp.createdAt).toLocaleString()}
+                      <span className="text-[11px] text-ink-subtle">
+                        Filed: {new Date(comp.createdAt).toLocaleString('en-IN')}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px]">
                       <div>
-                        <span className="text-slate-500 block uppercase">Reported By</span>
-                        <span className="text-slate-200 font-bold">{comp.reportedBy?.name}</span>{' '}
-                        <span className="text-slate-500">({comp.reportedBy?.email})</span>
+                        <span className="text-ink-muted block uppercase font-semibold">Reported By</span>
+                        <span className="text-ink font-bold">{comp.reportedBy?.name}</span>{' '}
+                        <span className="text-ink-muted">({comp.reportedBy?.email})</span>
                       </div>
                       <div>
-                        <span className="text-slate-500 block uppercase">Target Reference</span>
+                        <span className="text-ink-muted block uppercase font-semibold">Target Reference</span>
                         {comp.listing && (
-                          <span className="text-amber-400">Produce Listing: {comp.listing.cropName}</span>
+                          <span className="text-brand-800 font-medium">Produce Listing: {comp.listing.cropName}</span>
                         )}
                         {comp.order && (
-                          <span className="text-blue-400">Order Reference: #{comp.order.id.slice(0, 8)}</span>
+                          <span className="text-info font-medium font-mono">Order Reference: #{comp.order.id.slice(0, 8)}</span>
                         )}
                       </div>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                      <div className="font-semibold text-rose-300 text-xs mb-1">Reason: {comp.reason}</div>
-                      <div className="text-slate-400 text-xs font-sans leading-relaxed">{comp.description}</div>
+                    <div className="p-3.5 rounded-lg bg-surface-muted border border-line">
+                      <div className="font-semibold text-danger text-xs mb-1">Reason: {comp.reason}</div>
+                      <div className="text-ink text-xs leading-relaxed">{comp.description}</div>
                     </div>
 
                     {comp.adminResponse && (
-                      <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 text-xs">
-                        <span className="text-amber-400 font-bold block mb-1">Official Resolution Response:</span>
-                        <p className="text-slate-300 font-sans">{comp.adminResponse}</p>
+                      <div className="p-3.5 rounded-lg bg-brand-50 border border-brand-200 text-xs">
+                        <span className="text-brand-800 font-bold block mb-1">Official Resolution Response:</span>
+                        <p className="text-ink leading-relaxed">{comp.adminResponse}</p>
                       </div>
                     )}
 
@@ -1163,7 +1173,7 @@ export default function AdminDashboard() {
                           setSelectedComplaint(comp);
                           setComplaintResponseText(comp.adminResponse || '');
                         }}
-                        className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-medium cursor-pointer transition-all flex items-center gap-1.5"
+                        className="px-3.5 py-1.5 bg-brand-800 hover:bg-brand-800 text-white rounded-lg text-xs font-medium cursor-pointer transition-colors shadow-sm flex items-center gap-1.5"
                       >
                         <ShieldAlert className="w-3.5 h-3.5" />
                         <span>Manage Resolution</span>
@@ -1178,45 +1188,45 @@ export default function AdminDashboard() {
 
         {/* TAB 6: AUDIT LOGS */}
         {activeTab === 'audit' && (
-          <div className="p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-xl space-y-4 font-mono text-xs">
+          <div className="p-4 sm:p-5 rounded-xl bg-surface border border-line shadow-card space-y-4 text-xs">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-slate-200 text-sm flex items-center gap-2">
-                <FileText className="w-4 h-4 text-amber-400" /> Platform Security &amp; Audit Trail
+              <h3 className="font-semibold text-ink text-sm flex items-center gap-2">
+                <FileText className="w-4 h-4 text-brand-800" /> Platform Security &amp; Audit Trail
               </h3>
-              <span className="text-slate-500">Immutable Ledger</span>
+              <span className="text-ink-subtle font-mono text-[11px]">Immutable Ledger</span>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 uppercase text-[11px]">
-                    <th className="pb-3 font-medium">Timestamp</th>
-                    <th className="pb-3 font-medium">Administrator</th>
-                    <th className="pb-3 font-medium">Action Event</th>
-                    <th className="pb-3 font-medium">Target Entity</th>
-                    <th className="pb-3 font-medium">Details / Payload</th>
-                    <th className="pb-3 font-medium">Source IP</th>
+                  <tr className="border-b border-line text-ink-muted uppercase text-[11px] font-semibold">
+                    <th className="pb-3">Timestamp</th>
+                    <th className="pb-3">Administrator</th>
+                    <th className="pb-3">Action Event</th>
+                    <th className="pb-3">Target Entity</th>
+                    <th className="pb-3">Details / Payload</th>
+                    <th className="pb-3">Source IP</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-line font-mono">
                   {auditLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-950/40">
-                      <td className="py-2.5 text-slate-400 text-[11px]">
-                        {new Date(log.createdAt).toLocaleString()}
+                    <tr key={log.id} className="hover:bg-surface-muted/70">
+                      <td className="py-2.5 text-ink-muted text-[11px]">
+                        {new Date(log.createdAt).toLocaleString('en-IN')}
                       </td>
-                      <td className="py-2.5 text-slate-300 font-bold">{log.adminEmail}</td>
+                      <td className="py-2.5 text-ink font-bold">{log.adminEmail}</td>
                       <td className="py-2.5">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-brand-50 text-brand-800 border border-brand-200">
                           {log.action}
                         </span>
                       </td>
-                      <td className="py-2.5 text-slate-400">
+                      <td className="py-2.5 text-ink-muted">
                         {log.targetType} {log.targetId ? `(${log.targetId.slice(0, 8)}...)` : ''}
                       </td>
-                      <td className="py-2.5 text-slate-400 max-w-xs truncate text-[10px]">
+                      <td className="py-2.5 text-ink-muted max-w-xs truncate text-[11px]">
                         {typeof log.details === 'object' ? JSON.stringify(log.details) : log.details}
                       </td>
-                      <td className="py-2.5 text-slate-500 text-[10px]">{log.ipAddress}</td>
+                      <td className="py-2.5 text-ink-subtle text-[10px]">{log.ipAddress}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1224,21 +1234,21 @@ export default function AdminDashboard() {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+            <div className="flex items-center justify-between pt-3 border-t border-line">
               <button
                 disabled={auditPagination.page <= 1}
                 onClick={() => loadAuditLogs(auditPagination.page - 1)}
-                className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                className="px-3 py-1.5 bg-surface border border-line hover:bg-surface-muted rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
               >
                 <ChevronLeft className="w-3.5 h-3.5" /> Previous
               </button>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-ink-muted">
                 {auditPagination.page} / {auditPagination.totalPages}
               </span>
               <button
                 disabled={auditPagination.page >= auditPagination.totalPages}
                 onClick={() => loadAuditLogs(auditPagination.page + 1)}
-                className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                className="px-3 py-1.5 bg-surface border border-line hover:bg-surface-muted rounded-lg text-xs disabled:opacity-40 cursor-pointer flex items-center gap-1"
               >
                 Next <ChevronRight className="w-3.5 h-3.5" />
               </button>
@@ -1249,33 +1259,33 @@ export default function AdminDashboard() {
 
       {/* Complaint Resolution Modal */}
       {selectedComplaint && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-lg w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-400" />
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="max-w-lg w-full bg-surface border border-line rounded-2xl p-6 space-y-4 shadow-modal">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <h3 className="font-bold text-ink text-base flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-warning" />
                 Resolve Dispute #{selectedComplaint.id.slice(0, 8)}
               </h3>
               <button
                 onClick={() => setSelectedComplaint(null)}
-                className="text-slate-400 hover:text-white text-lg cursor-pointer"
+                className="text-ink-subtle hover:text-ink-muted text-lg cursor-pointer"
               >
                 &times;
               </button>
             </div>
 
-            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs font-mono space-y-1">
-              <div className="text-slate-300">
+            <div className="p-3.5 bg-surface-muted rounded-xl border border-line text-xs space-y-1">
+              <div className="text-ink">
                 <strong>Complainant:</strong> {selectedComplaint.reportedBy?.name}
               </div>
-              <div className="text-rose-400">
+              <div className="text-danger">
                 <strong>Reason:</strong> {selectedComplaint.reason}
               </div>
-              <p className="text-slate-400 text-xs font-sans mt-2">{selectedComplaint.description}</p>
+              <p className="text-ink-muted text-xs mt-2 leading-relaxed">{selectedComplaint.description}</p>
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase text-slate-300 font-mono">
+              <label className="block text-xs font-semibold uppercase text-ink">
                 Official Administrative Response
               </label>
               <textarea
@@ -1283,35 +1293,35 @@ export default function AdminDashboard() {
                 value={complaintResponseText}
                 onChange={(e) => setComplaintResponseText(e.target.value)}
                 placeholder="Enter investigation findings, corrective actions taken, and formal resolution text..."
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-amber-500 transition-all font-sans"
+                className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-2 border-t border-slate-800">
+            <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-2 border-t border-line">
               <button
                 onClick={() => setSelectedComplaint(null)}
-                className="w-full sm:w-auto px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-xl transition-all cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2 bg-surface hover:bg-surface-muted text-ink border border-line text-xs font-medium rounded-lg transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 disabled={complaintUpdating}
                 onClick={() => handleResolveComplaint('UNDER_REVIEW')}
-                className="w-full sm:w-auto px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium rounded-xl transition-all cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg transition-colors cursor-pointer shadow-card"
               >
                 Mark Under Review
               </button>
               <button
                 disabled={complaintUpdating}
                 onClick={() => handleResolveComplaint('DISMISSED')}
-                className="w-full sm:w-auto px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium rounded-xl transition-all cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2 bg-surface hover:bg-surface-muted text-ink border border-line text-xs font-medium rounded-lg transition-colors cursor-pointer shadow-card"
               >
                 Dismiss
               </button>
               <button
                 disabled={complaintUpdating}
                 onClick={() => handleResolveComplaint('RESOLVED')}
-                className="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-xl transition-all cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2 bg-brand-800 hover:bg-brand-800 text-white text-xs font-medium rounded-lg transition-colors cursor-pointer shadow-card"
               >
                 Resolve Case
               </button>
@@ -1322,3 +1332,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+

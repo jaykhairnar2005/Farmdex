@@ -3,12 +3,38 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#174D3A" />
+  <meta name="description" content="FarmDex — a real-time agricultural marketplace connecting farmers directly with buyers. Trade fresh produce, negotiate prices, and track deliveries." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <title>FarmDex – Real-Time Agricultural Marketplace</title>
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('farmdex-theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = saved === 'dark' || saved === 'light' ? saved : (prefersDark ? 'dark' : 'light');
+        var root = document.documentElement;
+        if (theme === 'dark') {
+          root.classList.add('dark');
+          root.classList.remove('light');
+          root.setAttribute('data-theme', 'dark');
+          root.style.colorScheme = 'dark';
+        } else {
+          root.classList.remove('dark');
+          root.classList.add('light');
+          root.setAttribute('data-theme', 'light');
+          root.style.colorScheme = 'light';
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 
-<body class="bg-slate-950 text-slate-100 antialiased min-h-screen">
+<body class="bg-canvas text-ink antialiased min-h-screen">
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
 </body>

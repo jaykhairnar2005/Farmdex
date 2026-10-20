@@ -1,48 +1,29 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  MessageSquare,
-  Send,
-  ArrowLeft,
-  User,
-  Search,
-  ShieldCheck,
-  CheckCheck,
-  Check,
-  Circle,
-  Sprout,
-  Store,
-  RefreshCw,
-  Clock,
-  Sparkles,
+  MessageSquare, Send, ArrowLeft, Search, CheckCheck, Check,
+  RefreshCw, Sparkles,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 import { useSocket } from '../context/SocketContext';
-import {
-  fetchConversationsApi,
-  fetchMessagesApi,
-  sendMessageApi,
-  markConversationReadApi,
-} from '../services/api';
 import Navbar from '../components/Navbar';
+import { PageSpinner, EmptyState, InlineAlert } from '../components/ui';
+import {
+  fetchConversationsApi, fetchMessagesApi, sendMessageApi, markConversationReadApi,
+} from '../services/api';
+import { formatDateTime } from '../utils/formatters';
+import AppLayout from '../layouts/AppLayout';
 
 export default function Messages() {
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
-  const {
-    socket,
-    isConnected,
-    joinConversation,
-    leaveConversation,
-    sendTyping,
-    refreshUnreadCounts,
-  } = useSocket();
+  const { socket, isConnected, joinConversation, leaveConversation, sendTyping, refreshUnreadCounts } = useSocket();
   const location = useLocation();
   const navigate = useNavigate();
 
   const [conversations, setConversations] = useState([]);
-  const [activeConversationId, setActiveConversationId] = useState(
-    location.state?.conversationId || null
-  );
+  const [activeConversationId, setActiveConversationId] = useState(location.state?.conversationId || null);
   const [messages, setMessages] = useState([]);
   const [inputContent, setInputContent] = useState('');
   const [loadingConversations, setLoadingConversations] = useState(true);
@@ -56,16 +37,10 @@ export default function Messages() {
   const typingTimeoutRef = useRef(null);
   const activeConversationIdRef = useRef(activeConversationId);
 
-  useEffect(() => {
-    activeConversationIdRef.current = activeConversationId;
-  }, [activeConversationId]);
+  useEffect(() => { activeConversationIdRef.current = activeConversationId; }, [activeConversationId]);
 
-  // Scroll to bottom of chat history
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const scrollToBottom = () => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); };
 
-  // Load conversations
   const loadConversations = useCallback(async () => {
     try {
       setLoadingConversations(true);
@@ -73,7 +48,6 @@ export default function Messages() {
       const res = await fetchConversationsApi();
       if (res.success) {
         setConversations(res.data || []);
-        // Auto-select first conversation if none selected and on desktop
         if (!activeConversationIdRef.current && res.data?.length > 0 && window.innerWidth >= 768) {
           setActiveConversationId(res.data[0].id);
         }
@@ -85,11 +59,8 @@ export default function Messages() {
     }
   }, []);
 
-  useEffect(() => {
-    loadConversations();
-  }, [loadConversations]);
+  useEffect(() => { loadConversations(); }, [loadConversations]);
 
-  // Load messages when active conversation changes
   const loadMessages = useCallback(async (convId) => {
     if (!convId) return;
     try {
@@ -97,10 +68,7 @@ export default function Messages() {
       const res = await fetchMessagesApi(convId, { limit: 100 });
       if (res.success) {
         setMessages(res.data?.messages || []);
-        // Mark conversation as read in local list & global counts
-        setConversations((prev) =>
-          prev.map((c) => (c.id === convId ? { ...c, unreadCount: 0 } : c))
-        );
+        setConversations((prev) => prev.map((c) => c.id === convId ? { ...c, unreadCount: 0 } : c));
         refreshUnreadCounts();
       }
     } catch (err) {
@@ -111,19 +79,13 @@ export default function Messages() {
     }
   }, [refreshUnreadCounts]);
 
-  // Manage conversation room joining and messages fetching
   useEffect(() => {
     if (!activeConversationId) return;
-
     joinConversation(activeConversationId);
     loadMessages(activeConversationId);
-
-    return () => {
-      leaveConversation(activeConversationId);
-    };
+    return () => { leaveConversation(activeConversationId); };
   }, [activeConversationId, joinConversation, leaveConversation, loadMessages]);
 
-  // Socket event listeners for real-time messages & typing
   useEffect(() => {
     if (!socket) return;
 
@@ -134,33 +96,23 @@ export default function Messages() {
           return [...prev, newMsg];
         });
         setTimeout(scrollToBottom, 50);
-
-        // Acknowledge read if recipient is currently focused on this chat
         markConversationReadApi(newMsg.conversationId).catch(() => {});
       }
-
-      // Update conversations list lastMessage and unreadCount
-      setConversations((prev) => {
-        return prev.map((conv) => {
-          if (conv.id === newMsg.conversationId) {
-            const isCurrentActive = conv.id === activeConversationIdRef.current;
-            return {
-              ...conv,
-              lastMessage: newMsg,
-              unreadCount: isCurrentActive ? 0 : (conv.unreadCount || 0) + 1,
-              updatedAt: newMsg.createdAt,
-            };
-          }
-          return conv;
-        });
-      });
+      setConversations((prev) => prev.map((conv) => {
+        if (conv.id !== newMsg.conversationId) return conv;
+        const isCurrentActive = conv.id === activeConversationIdRef.current;
+        return {
+          ...conv,
+          lastMessage: newMsg,
+          unreadCount: isCurrentActive ? 0 : (conv.unreadCount || 0) + 1,
+          updatedAt: newMsg.createdAt,
+        };
+      }));
     };
 
     const handleMessagesRead = ({ conversationId, readBy }) => {
       if (readBy !== user?.id && conversationId === activeConversationIdRef.current) {
-        setMessages((prev) =>
-          prev.map((msg) => (msg.senderId === user?.id ? { ...msg, isRead: true } : msg))
-        );
+        setMessages((prev) => prev.map((msg) => msg.senderId === user?.id ? { ...msg, isRead: true } : msg));
       }
     };
 
@@ -189,45 +141,30 @@ export default function Messages() {
     };
   }, [socket, user?.id]);
 
-  // Handle typing input change
   const handleInputChange = (e) => {
     setInputContent(e.target.value);
     if (activeConversationId) {
       sendTyping(activeConversationId, true);
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      typingTimeoutRef.current = setTimeout(() => {
-        sendTyping(activeConversationId, false);
-      }, 1500);
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => sendTyping(activeConversationId, false), 1500);
     }
   };
 
-  // Send message
   const handleSendMessage = async (e) => {
     if (e) e.preventDefault();
     if (!inputContent.trim() || !activeConversationId || sendingMessage) return;
-
     const content = inputContent.trim();
     setInputContent('');
     sendTyping(activeConversationId, false);
-
     try {
       setSendingMessage(true);
       const res = await sendMessageApi(activeConversationId, content);
       if (res.success && res.data) {
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === res.data.id)) return prev;
-          return [...prev, res.data];
-        });
+        setMessages((prev) => prev.some((m) => m.id === res.data.id) ? prev : [...prev, res.data]);
         setTimeout(scrollToBottom, 50);
-
-        // Update conversation in list
-        setConversations((prev) =>
-          prev.map((c) =>
-            c.id === activeConversationId
-              ? { ...c, lastMessage: res.data, updatedAt: res.data.createdAt }
-              : c
-          )
-        );
+        setConversations((prev) => prev.map((c) =>
+          c.id === activeConversationId ? { ...c, lastMessage: res.data, updatedAt: res.data.createdAt } : c
+        ));
       }
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to send message');
@@ -240,369 +177,249 @@ export default function Messages() {
   const otherUser = activeConversation?.otherParticipant;
 
   const filteredConversations = conversations.filter((c) => {
+    const q = searchQuery.toLowerCase();
+    if (!q) return true;
     const name = c.otherParticipant?.name || '';
-    const farmName = c.otherParticipant?.farmerProfile?.farmName || '';
-    const businessName = c.otherParticipant?.buyerProfile?.businessName || '';
-    const query = searchQuery.toLowerCase();
-    return (
-      name.toLowerCase().includes(query) ||
-      farmName.toLowerCase().includes(query) ||
-      businessName.toLowerCase().includes(query)
-    );
+    const farm = c.otherParticipant?.farmerProfile?.farmName || '';
+    const biz = c.otherParticipant?.buyerProfile?.businessName || '';
+    return name.toLowerCase().includes(q) || farm.toLowerCase().includes(q) || biz.toLowerCase().includes(q);
   });
 
-  const formatMessageTime = (dateStr) => {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  const fmt = (d) => d ? new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-canvas flex flex-col">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto w-full p-2 sm:p-6 flex-1 flex flex-col">
-        {/* Top Header Card */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4 px-2">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
-              <MessageSquare className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                Trade Communications
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
-                  Milestone 9 Real-Time
-                </span>
-              </h1>
-              <p className="text-xs text-slate-400">
-                Direct peer-to-peer negotiation between farmers and buyers
-              </p>
-            </div>
-          </div>
-
-          {/* Connection Status Badge */}
-          <div className="flex items-center gap-2">
-            <div
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono border ${
-                isConnected
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                  : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-              }`}
-            >
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
-                }`}
-              />
-              <span>{isConnected ? 'Socket Live' : 'Connecting...'}</span>
-            </div>
-
-            <button
-              onClick={loadConversations}
-              title="Refresh Conversations"
-              className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-lg border border-slate-800 transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {error && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center justify-between">
-            <span>{error}</span>
-            <button
-              onClick={() => setError(null)}
-              className="text-slate-400 hover:text-white font-bold ml-2"
-            >
-              ×
-            </button>
-          </div>
-        )}
-
-        {/* Chat Two-Pane Card */}
-        <div className="flex-1 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col md:flex-row min-h-[600px] h-[calc(100vh-220px)]">
-          {/* Left Pane: Conversation List */}
-          <div
-            className={`w-full md:w-80 lg:w-96 border-r border-slate-800 flex flex-col bg-slate-900/60 ${
-              activeConversationId ? 'hidden md:flex' : 'flex'
-            }`}
-          >
-            {/* Search Box */}
-            <div className="p-3 border-b border-slate-800">
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                <input
-                  type="text"
-                  placeholder="Search traders..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
-                />
+      <div className="flex-1 flex flex-col">
+        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex-1 flex flex-col fade-in"
+          style={{ maxHeight: 'calc(100vh - 64px)' }}>
+          {/* Header */}
+          <div className="flex items-center justify-between pb-4 border-b border-line mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-brand-50 text-brand-800 border border-brand-100 flex items-center justify-center">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold text-ink">{t('messages.title')}</h1>
+                <p className="text-xs text-ink-muted">{t('messages.subtitle')}</p>
               </div>
             </div>
-
-            {/* Conversation Items */}
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-800/60">
-              {loadingConversations ? (
-                <div className="p-8 text-center text-slate-500 text-xs flex flex-col items-center gap-2">
-                  <RefreshCw className="w-5 h-5 animate-spin text-emerald-400" />
-                  <span>Loading conversations...</span>
-                </div>
-              ) : filteredConversations.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 text-xs flex flex-col items-center gap-3">
-                  <div className="p-3 bg-slate-800/40 rounded-full text-slate-400">
-                    <MessageSquare className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-slate-300">No conversations yet</p>
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      Start direct negotiations from any produce listing in the Marketplace.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => navigate('/marketplace')}
-                    className="mt-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg text-xs transition-colors"
-                  >
-                    Browse Marketplace
-                  </button>
-                </div>
-              ) : (
-                filteredConversations.map((conv) => {
-                  const other = conv.otherParticipant;
-                  const isActive = conv.id === activeConversationId;
-                  const lastMsg = conv.lastMessage;
-                  const isUnread = (conv.unreadCount || 0) > 0;
-
-                  return (
-                    <button
-                      key={conv.id}
-                      onClick={() => setActiveConversationId(conv.id)}
-                      className={`w-full text-left p-3.5 transition-colors flex items-start gap-3 cursor-pointer ${
-                        isActive
-                          ? 'bg-emerald-500/10 border-l-4 border-emerald-500'
-                          : 'hover:bg-slate-800/40 border-l-4 border-transparent'
-                      }`}
-                    >
-                      {/* Avatar */}
-                      <div className="relative flex-shrink-0">
-                        <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400 font-bold text-sm uppercase">
-                          {other?.name ? other.name.slice(0, 2) : 'U'}
-                        </div>
-                        {isConnected && (
-                          <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full" />
-                        )}
-                      </div>
-
-                      {/* Info & Last Message */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-xs font-bold text-white truncate">
-                            {other?.name || 'User'}
-                          </span>
-                          <span className="text-[10px] font-mono text-slate-500 flex-shrink-0">
-                            {lastMsg?.createdAt ? formatMessageTime(lastMsg.createdAt) : ''}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <span
-                            className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-semibold uppercase ${
-                              other?.role === 'FARMER'
-                                ? 'bg-emerald-500/20 text-emerald-300'
-                                : 'bg-blue-500/20 text-blue-300'
-                            }`}
-                          >
-                            {other?.role}
-                          </span>
-                          <span className="text-[11px] text-slate-400 truncate">
-                            {other?.farmerProfile?.farmName ||
-                              other?.buyerProfile?.businessName ||
-                              'Direct Trader'}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <p
-                            className={`text-xs truncate ${
-                              isUnread ? 'font-bold text-slate-100' : 'text-slate-400'
-                            }`}
-                          >
-                            {lastMsg?.senderId === user?.id && (
-                              <span className="text-slate-500 mr-1">You:</span>
-                            )}
-                            {lastMsg?.content || 'Started conversation'}
-                          </p>
-
-                          {isUnread && (
-                            <span className="ml-2 px-1.5 py-0.5 bg-emerald-500 text-slate-950 font-bold rounded-full text-[10px] font-mono">
-                              {conv.unreadCount}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })
-              )}
+            <div className="flex items-center gap-2">
+              <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${
+                isConnected ? 'bg-success-soft text-success border-success-edge' : 'bg-warning-soft text-warning border-warning-edge'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success animate-pulse' : 'bg-warning'}`} />
+                {isConnected ? (i18n.language === 'en' ? 'Connected' : t('common.active')) : '...'}
+              </span>
+              <button
+                onClick={loadConversations}
+                className="w-9 h-9 flex items-center justify-center text-ink-muted hover:text-ink hover:bg-surface-muted rounded-lg border border-line transition-colors cursor-pointer"
+                title={t('common.refresh')}
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          {/* Right Pane: Active Chat Room */}
-          <div
-            className={`flex-1 flex flex-col bg-slate-950/80 ${
-              !activeConversationId ? 'hidden md:flex' : 'flex'
-            }`}
-          >
-            {activeConversation ? (
-              <>
-                {/* Chat Room Header */}
-                <div className="p-3.5 border-b border-slate-800 bg-slate-900/80 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {/* Back Button for Mobile */}
-                    <button
-                      onClick={() => setActiveConversationId(null)}
-                      className="md:hidden p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
-                    >
-                      <ArrowLeft className="w-5 h-5" />
-                    </button>
+          {error && (
+            <InlineAlert type="error" message={error} onDismiss={() => setError(null)} className="mb-4" />
+          )}
 
-                    {/* Participant Avatar & Metadata */}
-                    <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400 font-bold text-sm uppercase flex-shrink-0">
-                      {otherUser?.name ? otherUser.name.slice(0, 2) : 'U'}
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-sm font-bold text-white">{otherUser?.name}</h2>
-                        <span
-                          className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-semibold uppercase ${
-                            otherUser?.role === 'FARMER'
-                              ? 'bg-emerald-500/20 text-emerald-300'
-                              : 'bg-blue-500/20 text-blue-300'
-                          }`}
-                        >
-                          {otherUser?.role}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-400">
-                        {otherUser?.farmerProfile?.farmName
-                          ? `${otherUser.farmerProfile.farmName} (${
-                              [otherUser.farmerProfile.district, otherUser.farmerProfile.state]
-                                .filter(Boolean)
-                                .join(', ') || 'Farm'
-                            })`
-                          : otherUser?.buyerProfile?.businessName || otherUser?.email}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Typing Indicator in Header */}
-                  {typingUsers[activeConversationId] && (
-                    <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium animate-pulse">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Typing...</span>
-                    </div>
-                  )}
+          {/* Two-pane */}
+          <div className="flex-1 bg-surface border border-line rounded-xl overflow-hidden flex flex-col md:flex-row min-h-0 h-[calc(100vh-240px)]">
+            {/* Left: conversation list */}
+            <div className={`w-full md:w-80 lg:w-96 border-r border-line flex flex-col bg-surface-muted/30 ${activeConversationId ? 'hidden md:flex' : 'flex'}`}>
+              <div className="p-3 border-b border-line">
+                <div className="relative">
+                  <Search className="w-4 h-4 text-ink-subtle absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder={t('messages.searchPlaceholder')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-9 pl-9 pr-3 bg-surface border border-line rounded-lg text-xs text-ink placeholder:text-ink-subtle"
+                  />
                 </div>
+              </div>
 
-                {/* Messages Container */}
-                <div className="flex-1 p-4 overflow-y-auto space-y-3">
-                  {loadingMessages ? (
-                    <div className="p-8 text-center text-slate-500 text-xs flex flex-col items-center gap-2">
-                      <RefreshCw className="w-5 h-5 animate-spin text-emerald-400" />
-                      <span>Loading message history...</span>
-                    </div>
-                  ) : messages.length === 0 ? (
-                    <div className="p-12 text-center text-slate-500 text-xs space-y-2">
-                      <div className="p-3 bg-slate-800/40 rounded-full inline-block text-slate-400">
-                        <MessageSquare className="w-6 h-6" />
-                      </div>
-                      <p className="font-semibold text-slate-300">No messages yet</p>
-                      <p className="text-[11px] text-slate-500">
-                        Send a message below to start your trade negotiation with {otherUser?.name}.
-                      </p>
-                    </div>
-                  ) : (
-                    messages.map((msg) => {
-                      const isMe = msg.senderId === user?.id;
-
-                      return (
-                        <div
-                          key={msg.id}
-                          className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
-                        >
-                          <div
-                            className={`max-w-[80%] sm:max-w-md rounded-2xl px-4 py-2.5 text-xs leading-relaxed break-words shadow-md ${
-                              isMe
-                                ? 'bg-emerald-600 text-white rounded-br-none'
-                                : 'bg-slate-800/90 text-slate-200 border border-slate-700/60 rounded-bl-none'
-                            }`}
-                          >
-                            <p className="whitespace-pre-wrap">{msg.content}</p>
+              <div className="flex-1 overflow-y-auto divide-y divide-line">
+                {loadingConversations ? (
+                  <div className="py-12 flex flex-col items-center gap-2 text-xs text-ink-muted">
+                    <RefreshCw className="w-5 h-5 animate-spin text-brand-700" />
+                    {t('common.loading')}
+                  </div>
+                ) : filteredConversations.length === 0 ? (
+                  <div className="py-12 px-6 text-center text-xs text-ink-muted space-y-2">
+                    <MessageSquare className="w-6 h-6 mx-auto text-ink-subtle" />
+                    <p className="font-semibold text-ink">{t('messages.noConversations')}</p>
+                    <p>{t('messages.noConversationsDesc')}</p>
+                    <button
+                      onClick={() => navigate('/marketplace')}
+                      className="mt-2 px-3 py-1.5 bg-brand-800 hover:bg-brand-900 text-white text-xs font-medium rounded-lg cursor-pointer"
+                    >
+                      {t('footer.browseProduce')}
+                    </button>
+                  </div>
+                ) : (
+                  filteredConversations.map((conv) => {
+                    const other = conv.otherParticipant;
+                    const isActive = conv.id === activeConversationId;
+                    const lastMsg = conv.lastMessage;
+                    const isUnread = (conv.unreadCount || 0) > 0;
+                    return (
+                      <button
+                        key={conv.id}
+                        onClick={() => setActiveConversationId(conv.id)}
+                        className={`w-full text-left p-3.5 transition-colors flex items-start gap-3 cursor-pointer ${
+                          isActive ? 'bg-brand-50/60 border-l-2 border-brand-800' : 'hover:bg-surface-muted/60 border-l-2 border-transparent'
+                        }`}
+                      >
+                        <div className="relative shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-800 border border-brand-200 flex items-center justify-center font-semibold text-sm uppercase">
+                            {other?.name ? other.name.slice(0, 2) : 'U'}
                           </div>
-
-                          {/* Time & Read Status */}
-                          <div
-                            className={`flex items-center gap-1 mt-1 text-[10px] font-mono text-slate-500 px-1 ${
-                              isMe ? 'justify-end' : 'justify-start'
-                            }`}
-                          >
-                            <span>{formatMessageTime(msg.createdAt)}</span>
-                            {isMe && (
-                              <span title={msg.isRead ? 'Read' : 'Delivered'}>
-                                {msg.isRead ? (
-                                  <CheckCheck className="w-3.5 h-3.5 text-emerald-400" />
-                                ) : (
-                                  <Check className="w-3.5 h-3.5 text-slate-500" />
-                                )}
+                          {isConnected && (
+                            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success border-2 border-surface rounded-full" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-xs font-semibold text-ink truncate">{other?.name || 'User'}</span>
+                            <span className="text-[10px] text-ink-subtle shrink-0">{lastMsg?.createdAt ? fmt(lastMsg.createdAt) : ''}</span>
+                          </div>
+                          <div className="flex items-center gap-1 mb-1">
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase ${
+                              other?.role === 'FARMER' ? 'bg-success-soft text-success border border-success-edge' : 'bg-info-soft text-info border border-info-edge'
+                            }`}>{other?.role === 'FARMER' ? t('auth.roleFarmer') : t('auth.roleBuyer')}</span>
+                            <span className="text-[11px] text-ink-muted truncate">
+                              {other?.farmerProfile?.farmName || other?.buyerProfile?.businessName || ''}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className={`text-xs truncate ${isUnread ? 'font-semibold text-ink' : 'text-ink-muted'}`}>
+                              {lastMsg?.senderId === user?.id && <span className="text-ink-subtle">You: </span>}
+                              {lastMsg?.content || t('messages.title')}
+                            </p>
+                            {isUnread && (
+                              <span className="ml-1.5 min-w-[18px] h-[18px] px-1 bg-brand-800 text-white text-[10px] font-semibold rounded-full flex items-center justify-center shrink-0">
+                                {conv.unreadCount}
                               </span>
                             )}
                           </div>
                         </div>
-                      );
-                    })
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Message Input Box */}
-                <form
-                  onSubmit={handleSendMessage}
-                  className="p-3 border-t border-slate-800 bg-slate-900/90 flex items-center gap-2"
-                >
-                  <input
-                    type="text"
-                    placeholder={`Message ${otherUser?.name || 'trader'}...`}
-                    value={inputContent}
-                    onChange={handleInputChange}
-                    disabled={sendingMessage}
-                    className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors disabled:opacity-50"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!inputContent.trim() || sendingMessage}
-                    className="p-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white disabled:text-slate-500 rounded-xl transition-all cursor-pointer disabled:cursor-not-allowed shadow-md"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                </form>
-              </>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500">
-                <div className="p-4 bg-slate-800/50 rounded-2xl text-slate-400 mb-3 border border-slate-800">
-                  <MessageSquare className="w-8 h-8 text-emerald-400" />
-                </div>
-                <h3 className="text-sm font-bold text-slate-300">Select a Conversation</h3>
-                <p className="text-xs text-slate-500 max-w-sm mt-1">
-                  Choose a trade partner from the list to view negotiation history or send real-time
-                  messages.
-                </p>
+                      </button>
+                    );
+                  })
+                )}
               </div>
-            )}
+            </div>
+
+            {/* Right: active chat */}
+            <div className={`flex-1 flex flex-col bg-surface ${!activeConversationId ? 'hidden md:flex' : 'flex'}`}>
+              {activeConversation ? (
+                <>
+                  {/* Chat header */}
+                  <div className="px-4 py-3 border-b border-line bg-surface-muted/40 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setActiveConversationId(null)}
+                        className="md:hidden p-1.5 text-ink-muted hover:text-ink rounded-lg hover:bg-surface-muted cursor-pointer"
+                      >
+                        <ArrowLeft className="w-5 h-5" />
+                      </button>
+                      <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-800 border border-brand-200 flex items-center justify-center font-semibold text-sm uppercase shrink-0">
+                        {otherUser?.name ? otherUser.name.slice(0, 2) : 'U'}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-ink">{otherUser?.name}</span>
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase ${
+                            otherUser?.role === 'FARMER' ? 'bg-success-soft text-success border border-success-edge' : 'bg-info-soft text-info border border-info-edge'
+                          }`}>{otherUser?.role === 'FARMER' ? t('auth.roleFarmer') : t('auth.roleBuyer')}</span>
+                        </div>
+                        <p className="text-[11px] text-ink-muted">
+                          {otherUser?.farmerProfile?.farmName || otherUser?.buyerProfile?.businessName || otherUser?.email}
+                        </p>
+                      </div>
+                    </div>
+                    {typingUsers[activeConversationId] && (
+                      <div className="flex items-center gap-1.5 text-xs text-brand-800 font-medium animate-pulse">
+                        <Sparkles className="w-3.5 h-3.5" /> {t('messages.typing')}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Messages */}
+                  <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-canvas">
+                    {loadingMessages ? (
+                      <PageSpinner message={t('common.loading')} />
+                    ) : messages.length === 0 ? (
+                      <div className="py-12 text-center text-xs text-ink-muted space-y-2">
+                        <MessageSquare className="w-6 h-6 mx-auto text-ink-subtle" />
+                        <p className="font-semibold text-ink">{t('messages.noConversations')}</p>
+                        <p>{t('messages.noConversationsDesc')}</p>
+                      </div>
+                    ) : (
+                      messages.map((msg) => {
+                        const isMe = msg.senderId === user?.id;
+                        return (
+                          <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                            <div className={`max-w-[80%] sm:max-w-md rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words shadow-card ${
+                              isMe ? 'bg-brand-800 text-white rounded-br-sm' : 'bg-surface text-ink border border-line rounded-bl-sm'
+                            }`}>
+                              <p className="whitespace-pre-wrap">{msg.content}</p>
+                            </div>
+                            <div className={`flex items-center gap-1 mt-1 text-[10px] text-ink-subtle px-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                              <span>{fmt(msg.createdAt)}</span>
+                              {isMe && (
+                                msg.isRead
+                                  ? <CheckCheck className="w-3.5 h-3.5 text-brand-600" title="Read" />
+                                  : <Check className="w-3.5 h-3.5 text-ink-subtle" title="Delivered" />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  {/* Composer */}
+                  <form
+                    onSubmit={handleSendMessage}
+                    className="p-3 border-t border-line bg-surface flex items-center gap-2"
+                  >
+                    <input
+                      type="text"
+                      placeholder={t('messages.typePlaceholder', { name: otherUser?.name || 'trader' })}
+                      value={inputContent}
+                      onChange={handleInputChange}
+                      disabled={sendingMessage}
+                      className="flex-1 h-10 px-3.5 bg-surface-muted border border-line rounded-lg text-sm text-ink placeholder:text-ink-subtle disabled:opacity-50"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!inputContent.trim() || sendingMessage}
+                      className="w-10 h-10 bg-brand-800 hover:bg-brand-900 disabled:bg-surface-sunken text-white disabled:text-ink-subtle rounded-lg transition-colors flex items-center justify-center shrink-0 cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-ink-muted">
+                  <div className="w-12 h-12 rounded-xl bg-surface-muted text-ink-subtle flex items-center justify-center mb-3">
+                    <MessageSquare className="w-6 h-6 text-brand-700" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-ink mb-1">{t('messages.selectConversation')}</h3>
+                  <p className="text-xs max-w-xs">{t('messages.selectConversationDesc')}</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

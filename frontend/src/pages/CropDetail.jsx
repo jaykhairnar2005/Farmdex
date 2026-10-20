@@ -1,29 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
-  ArrowLeft,
-  Sprout,
-  MapPin,
-  Calendar,
-  ShieldCheck,
-  Tractor,
-  Tag,
-  CheckCircle2,
-  Package,
-  Layers,
-  User,
-  AlertCircle,
-  Edit,
-  Handshake,
-  Check,
-  MessageSquare,
+  ArrowLeft, MapPin, Tractor, CheckCircle2, Package, AlertCircle,
+  Edit, Handshake, Check, MessageSquare, Leaf, ShieldCheck, Shield,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import { Button, ButtonLink, Badge, Card, EmptyState, PageSpinner, InlineAlert } from '../components/ui';
 import MakeOfferModal from '../components/MakeOfferModal';
 import { useAuth } from '../hooks/useAuth';
 import { fetchCropListingByIdApi, fetchListingOffersApi, startConversationApi } from '../services/api';
+import { getCropImageUrl, handleImageFallback } from '../utils/cropImages';
+import { formatCurrency, formatNumber, formatDate } from '../utils/formatters';
 
 export default function CropDetail() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -37,10 +29,7 @@ export default function CropDetail() {
   const [startingChat, setStartingChat] = useState(false);
 
   const handleMessageFarmer = async () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
+    if (!user) { navigate('/login'); return; }
     const farmerUserId = listing?.farmerProfile?.user?.id || listing?.farmerProfile?.userId;
     if (!farmerUserId) return;
     try {
@@ -51,7 +40,7 @@ export default function CropDetail() {
       } else {
         navigate('/messages');
       }
-    } catch (err) {
+    } catch {
       navigate('/messages');
     } finally {
       setStartingChat(false);
@@ -62,9 +51,7 @@ export default function CropDetail() {
     if (!user) return;
     try {
       const res = await fetchListingOffersApi(id);
-      if (res.success && Array.isArray(res.data)) {
-        setMyOffers(res.data);
-      }
+      if (res.success && Array.isArray(res.data)) setMyOffers(res.data);
     } catch (err) {
       console.warn('Could not load offers for this listing:', err.message);
     }
@@ -79,50 +66,39 @@ export default function CropDetail() {
         if (res.success && res.data) {
           setListing(res.data);
         } else {
-          setError(res.message || 'Crop listing not found');
+          setError(res.message || t('common.error', 'Crop listing not found'));
         }
       } catch (err) {
-        setError(err.response?.data?.message || err.message || 'Failed to retrieve produce details');
+        setError(err.response?.data?.message || err.message || t('common.error', 'Failed to retrieve produce details'));
       } finally {
         setLoading(false);
       }
     }
     loadListing();
-    if (user) {
-      loadOffers();
-    }
-  }, [id, user]);
+    if (user) loadOffers();
+  }, [id, user, t]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+      <div className="min-h-screen bg-canvas flex flex-col">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="space-y-3 text-center font-mono text-sm text-slate-400">
-            <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p>Loading produce specifications...</p>
-          </div>
-        </div>
+        <div className="flex-1"><PageSpinner message={t('common.loading', 'Loading produce details...')} /></div>
       </div>
     );
   }
 
   if (error || !listing) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+      <div className="min-h-screen bg-canvas flex flex-col">
         <Navbar />
-        <div className="max-w-md mx-auto my-auto p-8 text-center space-y-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
-          <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto">
-            <AlertCircle className="w-6 h-6" />
-          </div>
-          <h2 className="text-xl font-bold text-white">Produce Not Available</h2>
-          <p className="text-sm text-slate-400">{error || 'This listing does not exist or has been archived.'}</p>
-          <Link
-            to="/marketplace"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-md transition-all"
-          >
-            <ArrowLeft className="w-4 h-4" /> Back to Marketplace
-          </Link>
+        <div className="flex-1 flex items-center justify-center p-4">
+          <EmptyState
+            icon={AlertCircle}
+            title={t('common.noResults', 'Produce not available')}
+            message={error || t('marketplace.noProduceDesc', 'This listing does not exist or has been archived.')}
+            action={{ label: t('cropDetail.back', 'Back to marketplace'), onClick: () => navigate('/marketplace') }}
+            className="max-w-md"
+          />
         </div>
       </div>
     );
@@ -131,204 +107,177 @@ export default function CropDetail() {
   const images = listing.productImages || [];
   const farmer = listing.farmerProfile;
   const isOwner = user?.id && farmer?.userId === user.id;
+  const primaryImg =
+    images.length > 0 && images[selectedImageIdx]?.imageUrl
+      ? images[selectedImageIdx].imageUrl
+      : getCropImageUrl(listing.cropName, listing.category?.name);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-canvas flex flex-col">
       <Navbar />
 
-      <main className="max-w-6xl mx-auto w-full p-4 sm:p-8 space-y-8 flex-1">
-        {/* Navigation Breadcrumb */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-          <Link
-            to="/marketplace"
-            className="text-xs font-semibold text-slate-400 hover:text-emerald-400 flex items-center gap-1.5 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" /> Back to Marketplace
+      <main className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 flex-1 fade-in">
+        {/* Breadcrumb */}
+        <nav aria-label="Breadcrumb" className="flex items-center justify-between">
+          <Link to="/marketplace" className="text-sm text-ink-muted hover:text-ink flex items-center gap-1.5 transition-colors font-medium">
+            <ArrowLeft className="w-4 h-4" /> {t('cropDetail.back', 'Back to marketplace')}
           </Link>
-
           {isOwner && (
-            <Link
-              to="/my-listings"
-              className="text-xs font-medium text-emerald-400 hover:underline flex items-center gap-1"
-            >
-              <Edit className="w-3.5 h-3.5" /> Manage this listing in My Listings
+            <Link to="/my-listings" className="text-sm text-brand-800 hover:text-brand-900 font-medium flex items-center gap-1">
+              <Edit className="w-3.5 h-3.5" /> {t('cropDetail.editListing', 'Edit Produce Batch')}
             </Link>
           )}
-        </div>
+        </nav>
 
-        {/* Produce Showcase Grid */}
+        {/* Main two-column */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          {/* Left Column: Image Gallery */}
-          <div className="space-y-4">
-            <div className="relative aspect-square sm:aspect-4/3 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl">
-              {images.length > 0 ? (
-                <img
-                  src={images[selectedImageIdx]?.imageUrl}
-                  alt={listing.cropName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-slate-600 space-y-2 bg-gradient-to-br from-slate-950 to-slate-900">
-                  <Sprout className="w-16 h-16 text-emerald-500/20" />
-                  <p className="text-xs font-mono text-slate-500">No photos uploaded for this produce</p>
-                </div>
-              )}
-
+          {/* Gallery */}
+          <div className="space-y-3">
+            <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-surface-muted border border-line shadow-card">
+              <img
+                src={primaryImg}
+                alt={listing.cropName}
+                onError={(e) => handleImageFallback(e, listing.cropName, listing.category?.name)}
+                className="w-full h-full object-cover"
+              />
               {listing.isOrganic && (
-                <span className="absolute top-4 left-4 text-xs font-bold px-3 py-1 rounded-full bg-emerald-950/90 text-emerald-300 border border-emerald-500/30 backdrop-blur-sm">
-                  100% CERTIFIED ORGANIC
+                <span className="absolute top-4 left-4">
+                  <Badge colour="brand" icon={<Leaf className="w-3.5 h-3.5" />}>
+                    {t('cropDetail.organicCertified', 'Certified Organic')}
+                  </Badge>
+                </span>
+              )}
+              {listing.quality && (
+                <span className="absolute top-4 right-4 text-xs font-semibold px-2.5 py-1 rounded-md bg-surface/95 text-ink border border-line backdrop-blur-sm">
+                  {t('marketplace.grade', { grade: listing.quality, defaultValue: `Grade ${listing.quality}` })}
                 </span>
               )}
             </div>
 
-            {/* Thumbnail Carousel */}
             {images.length > 1 && (
-              <div className="flex items-center gap-3 overflow-x-auto pb-2">
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                 {images.map((img, idx) => (
                   <button
                     key={img.id}
                     onClick={() => setSelectedImageIdx(idx)}
-                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 cursor-pointer transition-all ${
-                      selectedImageIdx === idx ? 'border-emerald-500 shadow-md' : 'border-slate-800 opacity-60 hover:opacity-100'
+                    className={`w-16 h-14 rounded-lg overflow-hidden border-2 flex-shrink-0 cursor-pointer transition-all ${
+                      selectedImageIdx === idx ? 'border-brand-800' : 'border-line opacity-60 hover:opacity-100'
                     }`}
+                    aria-label={`View image ${idx + 1}`}
                   >
-                    <img src={img.imageUrl} alt="" className="w-full h-full object-cover" />
+                    <img
+                      src={img.imageUrl}
+                      alt=""
+                      onError={(e) => handleImageFallback(e, listing.cropName, listing.category?.name)}
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Right Column: Listing Specifications & Farmer Details */}
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-xs px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700 font-medium">
-                  {listing.category?.name}
-                </span>
-                {listing.quality && (
-                  <span className="text-xs px-2.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                    {listing.quality}
-                  </span>
-                )}
+          {/* Details */}
+          <div className="space-y-5">
+            <div>
+              <div className="flex items-center gap-2 mb-2.5 flex-wrap">
+                <Badge>{listing.category?.name}</Badge>
+                {listing.quality && <Badge colour="info">{t('marketplace.grade', { grade: listing.quality, defaultValue: `Grade ${listing.quality}` })}</Badge>}
+                {listing.isOrganic && <Badge colour="brand" icon={<Leaf className="w-3 h-3" />}>{t('marketplace.organic', 'Organic')}</Badge>}
               </div>
-
-              <h1 className="text-3xl font-extrabold text-white tracking-tight">{listing.cropName}</h1>
-
+              <h1 className="text-2xl sm:text-3xl font-semibold text-ink tracking-tight">{listing.cropName}</h1>
               {listing.location && (
-                <p className="text-sm text-slate-400 flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <span>{listing.location}</span>
+                <p className="text-sm text-ink-muted flex items-center gap-1.5 mt-2">
+                  <MapPin className="w-4 h-4 text-brand-700" /> {listing.location}
                 </p>
               )}
             </div>
 
-            {/* Pricing & Stock Card */}
-            <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-              <div className="flex items-baseline justify-between border-b border-slate-800 pb-4">
+            {/* Pricing card */}
+            <Card className="p-5 space-y-4">
+              <div className="flex items-end justify-between">
                 <div>
-                  <span className="text-xs text-slate-400 block">Offer Price</span>
-                  <div className="text-3xl font-extrabold text-emerald-400 font-mono">
-                    ₹{Number(listing.pricePerUnit).toLocaleString('en-IN')}
-                    <span className="text-sm font-normal text-slate-400"> / {listing.unit}</span>
-                  </div>
+                  <span className="text-xs text-ink-muted block">{t('common.price', 'Price per unit')}</span>
+                  <span className="text-3xl font-semibold text-brand-800">
+                    {formatCurrency(listing.pricePerUnit)}
+                  </span>
+                  <span className="text-sm text-ink-muted ml-1">/ {listing.unit}</span>
                 </div>
-
                 <div className="text-right">
-                  <span className="text-xs text-slate-400 block">Available Batch</span>
-                  <div className="text-xl font-bold text-slate-100 font-mono">
-                    {Number(listing.quantity).toLocaleString('en-IN')} {listing.unit}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-                <div>
-                  <span className="text-slate-500 block">Harvest Date:</span>
-                  <span className="text-slate-200">
-                    {listing.harvestDate ? new Date(listing.harvestDate).toLocaleDateString('en-IN') : 'Recent Harvest'}
+                  <span className="text-xs text-ink-muted block">{t('marketplace.available', 'Available stock')}</span>
+                  <span className="text-lg font-semibold text-ink">
+                    {formatNumber(listing.quantity)} {listing.unit}
                   </span>
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-3 border-t border-line text-xs">
                 <div>
-                  <span className="text-slate-500 block">Listing Status:</span>
-                  <span className="text-emerald-400 font-bold uppercase">{listing.status}</span>
+                  <span className="text-ink-muted">{t('cropDetail.harvestDate', 'Harvest date')}</span>
+                  <p className="text-ink font-medium">
+                    {listing.harvestDate ? formatDate(listing.harvestDate) : t('common.justNow', 'Recent')}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-ink-muted">{t('common.status', 'Status')}</span>
+                  <p className="text-brand-800 font-semibold uppercase">{listing.status}</p>
                 </div>
               </div>
-            </div>
+            </Card>
 
             {/* Description */}
             {listing.description && (
-              <div className="space-y-2">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  Produce Description
-                </h3>
-                <p className="text-sm text-slate-300 leading-relaxed bg-slate-900/60 p-4 rounded-xl border border-slate-800/80">
-                  {listing.description}
-                </p>
+              <div>
+                <h3 className="text-sm font-semibold text-ink mb-2">{t('cropDetail.description', 'Description')}</h3>
+                <p className="text-sm text-ink-muted leading-relaxed">{listing.description}</p>
               </div>
             )}
 
-            {/* Origin Farm Card */}
+            {/* Farm info */}
             {listing.farm && (
-              <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-3.5 text-xs">
-                <div className="p-2.5 bg-emerald-500/10 rounded-lg text-emerald-400 flex-shrink-0">
+              <div className="bg-brand-50 border border-brand-100 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-brand-100 text-brand-800 rounded-lg flex items-center justify-center">
                   <Tractor className="w-5 h-5" />
                 </div>
-                <div>
-                  <h4 className="font-semibold text-slate-100">{listing.farm.name}</h4>
-                  <p className="text-slate-400">
-                    {[listing.farm.address, listing.farm.district, listing.farm.state, listing.farm.pincode]
-                      .filter(Boolean)
-                      .join(', ')}
+                <div className="min-w-0">
+                  <h4 className="text-sm font-semibold text-ink">{listing.farm.name}</h4>
+                  <p className="text-xs text-ink-muted truncate">
+                    {[listing.farm.address, listing.farm.district, listing.farm.state, listing.farm.pincode].filter(Boolean).join(', ')}
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Farmer Profile Card */}
-            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-400">
-                    <User className="w-5 h-5" />
+            {/* Farmer / actions card */}
+            <Card className="p-5 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 bg-surface-muted text-ink-muted rounded-full flex items-center justify-center text-sm font-semibold">
+                    {farmer?.user?.name?.charAt(0)?.toUpperCase() || 'F'}
                   </div>
-                  <div>
-                    <h4 className="font-bold text-sm text-white">{farmer?.user?.name || farmer?.farmName}</h4>
-                    <p className="text-xs text-slate-400">
-                      {[farmer?.district, farmer?.state].filter(Boolean).join(', ') || 'Verified Agricultural Producer'}
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-semibold text-ink truncate">{farmer?.user?.name || farmer?.farmName}</h4>
+                    <p className="text-xs text-ink-muted truncate">
+                      {[farmer?.district, farmer?.state].filter(Boolean).join(', ') || t('cropDetail.verifiedSeller', 'Verified farmer')}
                     </p>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>{farmer?.verificationStatus || 'VERIFIED'}</span>
-                </div>
+                <Badge colour="success" icon={<ShieldCheck className="w-3.5 h-3.5" />}>
+                  {farmer?.verificationStatus || t('status.verified', 'VERIFIED')}
+                </Badge>
               </div>
 
-              {/* Trade Negotiation Action Section */}
-              <div className="pt-2 border-t border-slate-800 space-y-3">
+              <div className="pt-3 border-t border-line space-y-3">
                 {offerSuccessMessage && (
-                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2">
-                    <Check className="w-4 h-4 flex-shrink-0" />
-                    <span>{offerSuccessMessage}</span>
-                  </div>
+                  <InlineAlert type="success" message={offerSuccessMessage} onDismiss={() => setOfferSuccessMessage('')} />
                 )}
 
                 {isOwner ? (
-                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-400">Incoming Buyer Offers:</span>
-                      <span className="font-mono text-emerald-400 font-bold text-sm">
-                        {myOffers.length} {myOffers.length === 1 ? 'offer' : 'offers'}
-                      </span>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-ink-muted">{t('cropDetail.activeOffersTitle', 'Incoming offers')}</span>
+                      <span className="font-semibold text-brand-800">{myOffers.length}</span>
                     </div>
-                    <Link
-                      to="/offers"
-                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-center block transition-all shadow-md"
-                    >
-                      Manage &amp; Respond to Offers
-                    </Link>
+                    <ButtonLink to="/offers" className="w-full">{t('offers.titleFarmer', 'Manage offers')}</ButtonLink>
                   </div>
                 ) : user?.role === 'BUYER' ? (
                   (() => {
@@ -337,95 +286,95 @@ export default function CropDetail() {
 
                     if (activeOffer) {
                       return (
-                        <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-500/30 space-y-2 text-xs">
-                          <div className="flex items-center justify-between">
-                            <span className="text-purple-300 font-semibold">Active Negotiation</span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 uppercase">
-                              {activeOffer.status}
-                            </span>
+                        <div className="p-4 rounded-lg bg-warning-soft border border-warning-edge space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-warning font-semibold">{t('offers.counterOffer', 'Active negotiation')}</span>
+                            <Badge colour="warning">{activeOffer.status}</Badge>
                           </div>
-                          <div className="flex items-center justify-between text-slate-300 font-mono">
-                            <span>Your Offer: ₹{Number(activeOffer.offeredPrice).toLocaleString('en-IN')}/{listing.unit}</span>
-                            <span>{Number(activeOffer.quantity)} {listing.unit}</span>
-                          </div>
-                          {activeOffer.message && (
-                            <p className="text-[11px] text-slate-400 italic font-mono bg-slate-950/80 p-2 rounded">
-                              {activeOffer.message}
-                            </p>
-                          )}
-                          <Link
-                            to="/offers"
-                            className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg text-center block transition-all shadow-md"
-                          >
-                            Open Offers Dashboard
-                          </Link>
+                          <p className="text-sm text-warning">
+                            {formatCurrency(activeOffer.offeredPrice)}/{listing.unit} × {formatNumber(activeOffer.quantity)} {listing.unit}
+                          </p>
+                          <ButtonLink to="/offers" variant="secondary" className="w-full">
+                            {t('offers.card.counterOffer', 'View negotiation')}
+                          </ButtonLink>
                         </div>
                       );
                     }
 
                     if (acceptedOffer) {
                       return (
-                        <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-2 text-xs">
-                          <div className="flex items-center justify-between text-emerald-400 font-semibold">
-                            <span>Trade Offer Accepted!</span>
-                            <span className="font-mono">₹{Number(acceptedOffer.offeredPrice).toLocaleString('en-IN')}/{listing.unit}</span>
+                        <div className="p-4 rounded-lg bg-success-soft border border-success-edge space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-success font-semibold">{t('status.accepted', 'Offer accepted!')}</span>
+                            <span className="font-medium text-success">
+                              {formatCurrency(acceptedOffer.offeredPrice)}/{listing.unit}
+                            </span>
                           </div>
-                          <p className="text-[11px] text-slate-400">
-                            Your offer of ₹{Number(acceptedOffer.offeredPrice)} for {Number(acceptedOffer.quantity)} {listing.unit} was accepted by the farmer.
-                          </p>
-                          <Link
-                            to="/offers"
-                            className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-center block transition-all shadow-md"
-                          >
-                            View Negotiation Details
-                          </Link>
+                          <ButtonLink to="/offers" className="w-full">
+                            {t('offers.card.actions.checkout', 'Proceed to Settlement & Pay')}
+                          </ButtonLink>
                         </div>
                       );
                     }
 
                     return (
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => setOfferModalOpen(true)}
-                          className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl transition-all shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 cursor-pointer text-sm"
-                        >
-                          <Handshake className="w-4 h-4" />
-                          <span>Place Trade Offer / Negotiate</span>
-                        </button>
-                        <button
+                        <Button className="flex-1" icon={<Handshake className="w-4 h-4" />} onClick={() => setOfferModalOpen(true)}>
+                          {t('cropDetail.makeOffer', 'Make an offer')}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          icon={<MessageSquare className="w-4 h-4 text-brand-800" />}
                           onClick={handleMessageFarmer}
-                          disabled={startingChat}
-                          className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-semibold rounded-xl transition-all border border-slate-700 flex items-center justify-center gap-2 cursor-pointer text-sm"
-                          title="Message Farmer directly"
+                          loading={startingChat}
                         >
-                          <MessageSquare className="w-4 h-4 text-emerald-400" />
-                          <span className="hidden sm:inline">Message</span>
-                        </button>
+                          <span className="hidden sm:inline">{t('cropDetail.messageFarmer', 'Message')}</span>
+                        </Button>
                       </div>
                     );
                   })()
                 ) : !user ? (
-                  <div className="flex flex-col gap-2">
-                    <Link
-                      to="/login"
-                      className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl text-center block transition-colors border border-slate-700"
-                    >
-                      Log In as Buyer to Place an Offer
-                    </Link>
-                  </div>
+                  <ButtonLink to="/login" variant="secondary" className="w-full">
+                    {t('auth.signInTitle', 'Sign in to place an offer')}
+                  </ButtonLink>
                 ) : null}
               </div>
-            </div>
+            </Card>
           </div>
         </div>
+
+        {/* Bottom info section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-6 border-t border-line">
+          <InfoCard icon={Package} title={t('cropDetail.cropDetailsTitle', 'Produce specifications')}>
+            <Row label={t('common.filter', 'Category')} value={listing.category?.name} />
+            <Row label={t('cropDetail.qualityStandard', 'Quality Grade')} value={listing.quality || 'Standard'} />
+            <Row label={t('modals.cropListing.isOrganic', 'Certified Organic')} value={listing.isOrganic ? t('common.yes', 'Yes') : t('common.no', 'No')} />
+            <Row label={t('marketplace.available', 'Available stock')} value={`${formatNumber(listing.quantity)} ${listing.unit}`} last />
+          </InfoCard>
+
+          <InfoCard icon={Handshake} title={t('footer.howItWorks', 'How trade works')}>
+            <Step n={1} text={t('home.features.directDesc', 'Connect directly with verified farmers')} />
+            <Step n={2} text={t('home.features.negotiationDesc', 'Place formal offers, receive counter-offers')} />
+            <Step n={3} text={t('home.features.settlementDesc', 'Secure test payments with instant receipt generation')} />
+            <Step n={4} text={t('home.features.trackingDesc', 'Real-time 4-stage tracking from farm gate dispatch')} last />
+          </InfoCard>
+
+          <InfoCard icon={Shield} title={t('home.benefits.secureSettlements', 'Protected Payments')}>
+            <Bullet text={t('modals.checkout.paymentNotice', 'Uses secure Razorpay test payment simulation')} />
+            <Bullet text={t('orders.subtitle', 'Track purchase orders, confirm settlements, and follow carrier dispatch')} />
+            <Bullet text={t('messages.subtitle', 'Direct negotiation with farmers and verified buyers')} last />
+          </InfoCard>
+        </div>
       </main>
+
+      <Footer />
 
       <MakeOfferModal
         isOpen={offerModalOpen}
         onClose={() => setOfferModalOpen(false)}
         listing={listing}
         onSuccess={(createdOffer) => {
-          setOfferSuccessMessage(`Your offer of ₹${Number(createdOffer.offeredPrice).toLocaleString('en-IN')}/${listing.unit} was submitted to the farmer!`);
+          setOfferSuccessMessage(`Your offer of ₹${Number(createdOffer.offeredPrice).toLocaleString('en-IN')}/${listing.unit} was submitted.`);
           loadOffers();
         }}
       />
@@ -433,3 +382,46 @@ export default function CropDetail() {
   );
 }
 
+/* ── Local helpers ─────────────────────────────────────────── */
+function InfoCard({ icon: Icon, title, children }) {
+  return (
+    <Card className="p-5 space-y-3">
+      <div className="flex items-center gap-2.5 text-ink font-semibold text-sm">
+        <span className="w-8 h-8 rounded-lg bg-brand-50 text-brand-800 flex items-center justify-center">
+          <Icon className="w-4 h-4" />
+        </span>
+        {title}
+      </div>
+      <div className="space-y-0">{children}</div>
+    </Card>
+  );
+}
+
+function Row({ label, value, last }) {
+  return (
+    <div className={`flex justify-between py-1.5 text-xs ${last ? '' : 'border-b border-line/60'}`}>
+      <span className="text-ink-muted">{label}</span>
+      <span className="font-medium text-ink">{value}</span>
+    </div>
+  );
+}
+
+function Step({ n, text, last }) {
+  return (
+    <div className={`flex items-start gap-2.5 py-1.5 ${last ? '' : 'border-b border-line/60'}`}>
+      <span className="w-5 h-5 rounded-full bg-brand-50 text-brand-800 font-semibold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+        {n}
+      </span>
+      <span className="text-xs text-ink-muted leading-relaxed">{text}</span>
+    </div>
+  );
+}
+
+function Bullet({ text, last }) {
+  return (
+    <div className={`flex items-start gap-2 py-1.5 ${last ? '' : 'border-b border-line/60'}`}>
+      <CheckCircle2 className="w-4 h-4 text-success shrink-0 mt-0.5" />
+      <span className="text-xs text-ink-muted leading-relaxed">{text}</span>
+    </div>
+  );
+}

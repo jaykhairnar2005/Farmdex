@@ -13,14 +13,16 @@ import {
   FileText,
   Navigation,
   Package,
-  Sprout,
   ArrowRight,
   ShieldCheck,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { fetchDeliveryTrackingApi, updateDeliveryStatusApi } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import { formatDate, formatDateTime } from '../utils/formatters';
 
 export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarmer, onStatusUpdated }) {
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const isFarmerUser = (isFarmer || user?.role === 'FARMER') && !isAdmin;
@@ -121,59 +123,59 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
     switch (status) {
       case 'DELIVERED':
         return (
-          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1 font-mono">
-            <CheckCircle2 className="w-3 h-3" /> Delivered
+          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-success-soft text-success border border-success-edge flex items-center gap-1">
+            <CheckCircle2 className="w-3 h-3" /> {t('modals.deliveryTracking.steps.delivered')}
           </span>
         );
       case 'OUT_FOR_DELIVERY':
         return (
-          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1 font-mono animate-pulse">
-            <Truck className="w-3 h-3" /> Out for Delivery
+          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-warning-soft text-warning border border-warning-edge flex items-center gap-1">
+            <Truck className="w-3 h-3" /> {t('modals.deliveryTracking.steps.outForDelivery')}
           </span>
         );
       case 'IN_TRANSIT':
         return (
-          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center gap-1 font-mono">
-            <Navigation className="w-3 h-3" /> In Transit
+          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1">
+            <Navigation className="w-3 h-3" /> {t('modals.deliveryTracking.steps.inTransit')}
           </span>
         );
       case 'DISPATCHED':
         return (
-          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1 font-mono">
-            <Truck className="w-3 h-3" /> Dispatched
+          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-info-soft text-info border border-blue-200 flex items-center gap-1">
+            <Truck className="w-3 h-3" /> {t('modals.deliveryTracking.steps.dispatched')}
           </span>
         );
       case 'PREPARING':
         return (
-          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center gap-1 font-mono">
-            <Package className="w-3 h-3" /> Preparing
+          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200 flex items-center gap-1">
+            <Package className="w-3 h-3" /> {t('modals.deliveryTracking.steps.preparing')}
           </span>
         );
       default:
         return (
-          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 font-mono">
-            {status || 'Pending'}
+          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-surface-sunken text-ink">
+            {status || t('status.pending')}
           </span>
         );
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs fade-in">
+      <div className="relative w-full max-w-2xl bg-surface border border-line rounded-2xl shadow-modal overflow-hidden flex flex-col max-h-[92vh] text-ink">
         {/* Header */}
-        <div className="p-5 border-b border-slate-800 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 flex items-center justify-between">
+        <div className="p-5 border-b border-line bg-surface-muted/70 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-100 text-brand-800 flex items-center justify-center">
               <Truck className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-white tracking-tight">Delivery Tracking</h3>
+                <h3 className="text-lg font-bold text-ink tracking-tight">{t('modals.deliveryTracking.title')}</h3>
                 {delivery?.status && getStatusBadge(delivery.status)}
               </div>
-              <p className="text-xs text-slate-400">
-                Real-time agricultural freight movement &amp; consignment timeline
+              <p className="text-xs text-ink-muted">
+                {t('modals.deliveryTracking.subtitle')}
               </p>
             </div>
           </div>
@@ -182,14 +184,14 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
             <button
               onClick={loadTracking}
               disabled={loading}
-              className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
-              title="Refresh tracking"
+              className="p-2 text-ink-subtle hover:text-ink-muted rounded-lg hover:bg-surface-sunken transition-colors cursor-pointer"
+              title={t('common.refresh')}
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-2 text-ink-subtle hover:text-ink-muted rounded-lg hover:bg-surface-sunken transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -200,35 +202,35 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
         <div className="p-6 space-y-6 overflow-y-auto flex-1 font-sans">
           {loading ? (
             <div className="py-16 text-center space-y-3">
-              <div className="w-8 h-8 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto" />
-              <p className="text-xs text-slate-400 font-mono">Fetching consignment timeline...</p>
+              <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
+              <p className="text-xs text-ink-muted">{t('common.loading')}</p>
             </div>
           ) : error ? (
-            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
+            <div className="p-4 rounded-xl bg-danger-soft border border-danger-edge text-danger text-xs flex items-center gap-2">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <span>{error}</span>
             </div>
           ) : (
             <>
               {/* Consignment Quick Metrics Banner */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-slate-950 border border-slate-800 rounded-xl text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-surface-muted border border-line rounded-xl text-xs">
                 {/* Tracking Number */}
                 <div className="space-y-1">
-                  <span className="text-[10px] text-slate-500 font-mono block">Tracking Number</span>
+                  <span className="text-[10px] text-ink-muted font-mono block">{t('modals.deliveryTracking.trackingNo')}</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-mono font-bold text-white text-xs select-all">
-                      {delivery?.trackingNumber || 'Awaiting Dispatch'}
+                    <span className="font-mono font-bold text-ink text-xs select-all">
+                      {delivery?.trackingNumber || t('status.pending')}
                     </span>
                     {delivery?.trackingNumber && (
                       <button
                         onClick={() => handleCopyTracking(delivery.trackingNumber)}
-                        className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white transition-colors cursor-pointer"
-                        title="Copy tracking number"
+                        className="p-1 hover:bg-surface-muted rounded text-ink-muted hover:text-ink transition-colors cursor-pointer"
+                        title={t('modals.deliveryTracking.copyTracking')}
                       >
                         {copied ? (
-                          <Check className="w-3 h-3 text-emerald-400" />
+                          <Check className="w-3.5 h-3.5 text-brand-800" />
                         ) : (
-                          <Copy className="w-3 h-3" />
+                          <Copy className="w-3.5 h-3.5" />
                         )}
                       </button>
                     )}
@@ -237,35 +239,31 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
 
                 {/* Estimated Delivery */}
                 <div className="space-y-1">
-                  <span className="text-[10px] text-slate-500 font-mono block">Estimated Delivery</span>
-                  <span className="font-mono text-emerald-400 font-semibold block">
+                  <span className="text-[10px] text-ink-muted font-mono block">{t('modals.dispatch.estimatedDelivery')}</span>
+                  <span className="text-brand-800 font-semibold block text-xs">
                     {delivery?.estimatedDelivery
-                      ? new Date(delivery.estimatedDelivery).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })
-                      : 'Pending Dispatch'}
+                      ? formatDate(delivery.estimatedDelivery, i18n.language)
+                      : t('status.pending')}
                   </span>
                 </div>
 
                 {/* Destination */}
                 <div className="space-y-1">
-                  <span className="text-[10px] text-slate-500 font-mono block">Delivery Destination</span>
-                  <span className="text-slate-300 truncate block font-mono text-[11px]" title={data?.shippingAddress}>
-                    {data?.shippingAddress || 'Registered Address'}
+                  <span className="text-[10px] text-ink-muted font-mono block">{t('modals.checkout.shippingAddress')}</span>
+                  <span className="text-ink truncate block text-[11px]" title={data?.shippingAddress}>
+                    {data?.shippingAddress || t('common.location')}
                   </span>
                 </div>
               </div>
 
               {/* Visual Stepped Timeline */}
               <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-slate-300 font-mono uppercase tracking-wider flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                <h4 className="text-xs font-semibold text-ink uppercase tracking-wider flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-brand-800" />
                   Consignment Milestone Progression
                 </h4>
 
-                <div className="p-5 bg-slate-950 border border-slate-800 rounded-2xl space-y-6">
+                <div className="p-5 bg-surface-muted/70 border border-line rounded-xl space-y-6">
                   {timeline?.steps?.map((step, idx) => {
                     const isDone = step.isCompleted;
                     const isCurrent = step.isCurrent;
@@ -276,19 +274,19 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
                         {idx < timeline.steps.length - 1 && (
                           <div
                             className={`absolute left-4 top-8 -bottom-6 w-0.5 transition-colors ${
-                              isDone && !isCurrent ? 'bg-emerald-500' : 'bg-slate-800'
+                              isDone && !isCurrent ? 'bg-brand-800' : 'bg-line'
                             }`}
                           />
                         )}
 
                         {/* Node Icon */}
                         <div
-                          className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-mono font-bold transition-all shadow-md ${
+                          className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold transition-all shadow-card ${
                             isCurrent
-                              ? 'bg-emerald-500 text-white ring-4 ring-emerald-500/20'
+                              ? 'bg-brand-800 text-white ring-4 ring-brand-100'
                               : isDone
-                              ? 'bg-emerald-600/30 border border-emerald-500/50 text-emerald-400'
-                              : 'bg-slate-900 border border-slate-800 text-slate-500'
+                              ? 'bg-brand-100 border border-brand-200 text-brand-800'
+                              : 'bg-surface border border-line text-ink-subtle'
                           }`}
                         >
                           {isDone ? (
@@ -304,16 +302,16 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
                             <h5
                               className={`text-xs font-bold ${
                                 isCurrent
-                                  ? 'text-white'
+                                  ? 'text-ink'
                                   : isDone
-                                  ? 'text-slate-200'
-                                  : 'text-slate-500'
+                                  ? 'text-ink'
+                                  : 'text-ink-subtle'
                               }`}
                             >
                               {step.title}
                             </h5>
                             {step.timestamp && (
-                              <span className="text-[10px] text-slate-400 font-mono">
+                              <span className="text-[10px] text-ink-muted">
                                 {new Date(step.timestamp).toLocaleString('en-IN', {
                                   day: 'numeric',
                                   month: 'short',
@@ -323,7 +321,7 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-slate-400 leading-relaxed">
+                          <p className="text-[11px] text-ink-muted leading-relaxed">
                             {step.description}
                           </p>
                         </div>
@@ -336,29 +334,29 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
               {/* Status History Logs Table */}
               {history.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-xs font-semibold text-slate-300 font-mono uppercase tracking-wider flex items-center gap-2">
-                    <FileText className="w-3.5 h-3.5 text-blue-400" />
-                    Delivery Audit Log &amp; Checkpoints
+                  <h4 className="text-xs font-semibold text-ink uppercase tracking-wider flex items-center gap-2">
+                    <FileText className="w-3.5 h-3.5 text-brand-800" />
+                    {t('modals.deliveryTracking.auditLogTitle')}
                   </h4>
 
-                  <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
-                    <div className="divide-y divide-slate-800/60 text-xs">
+                  <div className="border border-line rounded-xl overflow-hidden bg-surface shadow-card">
+                    <div className="divide-y divide-line text-xs">
                       {history.map((h, i) => (
-                        <div key={h.id || i} className="p-3 flex items-start justify-between gap-3">
+                        <div key={h.id || i} className="p-3.5 flex items-start justify-between gap-3">
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-2">
                               {getStatusBadge(h.status)}
                               {h.location && (
-                                <span className="text-slate-400 text-[11px] flex items-center gap-1">
-                                  <MapPin className="w-3 h-3 text-slate-500" /> {h.location}
+                                <span className="text-ink-muted text-[11px] flex items-center gap-1">
+                                  <MapPin className="w-3 h-3 text-ink-subtle" /> {h.location}
                                 </span>
                               )}
                             </div>
                             {h.note && (
-                              <p className="text-[11px] text-slate-300 mt-1">{h.note}</p>
+                              <p className="text-[11px] text-ink-muted mt-1">{h.note}</p>
                             )}
                           </div>
-                          <span className="text-[10px] text-slate-500 font-mono shrink-0">
+                          <span className="text-[10px] text-ink-subtle shrink-0 font-mono">
                             {new Date(h.created_at).toLocaleString('en-IN', {
                               day: 'numeric',
                               month: 'short',
@@ -375,10 +373,10 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
 
               {/* Farmer Dispatched Notice */}
               {isFarmerUser && ['DISPATCHED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(delivery?.status) && (
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 font-mono flex items-center gap-3">
-                  <Truck className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                <div className="p-4 rounded-xl bg-surface-muted border border-line text-xs text-ink-muted flex items-center gap-3">
+                  <Truck className="w-5 h-5 text-brand-800 shrink-0" />
                   <div>
-                    <span className="font-bold text-slate-200 block">Produce Dispatched from Farm</span>
+                    <span className="font-bold text-ink block">Produce Dispatched from Farm</span>
                     <span>In-transit checkpoints and final delivery verification are managed by logistics carriers and platform administrators.</span>
                   </div>
                 </div>
@@ -386,27 +384,27 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
 
               {/* Status Update Action Box (FARMER: PREPARING/DISPATCHED only; ADMIN: all statuses) */}
               {((isFarmerUser && ['PENDING', 'PREPARING'].includes(delivery?.status)) || isAdmin) && (
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                  <div className="flex items-center justify-between border-b border-slate-900 pb-2">
+                <div className="p-4 rounded-xl bg-brand-50/50 border border-brand-200 space-y-3">
+                  <div className="flex items-center justify-between border-b border-brand-100 pb-2">
                     <div className="flex items-center gap-2">
-                      <Truck className="w-4 h-4 text-emerald-400" />
-                      <span className="text-xs font-bold text-white">
+                      <Truck className="w-4 h-4 text-brand-800" />
+                      <span className="text-xs font-bold text-ink">
                         {isAdmin ? 'Administrator Transit Control & Correction' : 'Seller Farm Dispatch Control'}
                       </span>
                     </div>
-                    <span className="text-[10px] text-slate-500 font-mono">
+                    <span className="text-[10px] text-ink-muted font-mono">
                       Current: {delivery?.status || 'PENDING'}
                     </span>
                   </div>
 
                   {updateError && (
-                    <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+                    <div className="p-3 rounded-lg bg-danger-soft border border-danger-edge text-danger text-xs">
                       {updateError}
                     </div>
                   )}
 
                   {updateSuccess && (
-                    <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
+                    <div className="p-3 rounded-lg bg-success-soft border border-success-edge text-success text-xs">
                       {updateSuccess}
                     </div>
                   )}
@@ -414,13 +412,13 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
                   <form onSubmit={handleFarmerUpdateStatus} className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                        <label className="block text-[11px] font-semibold text-ink mb-1">
                           {isAdmin ? 'Select Status (Update / Correct)' : 'Next Status Transition'}
                         </label>
                         <select
                           value={selectedNextStatus}
                           onChange={(e) => setSelectedNextStatus(e.target.value)}
-                          className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                          className="w-full px-3 py-2 bg-surface border border-line rounded-lg text-xs text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 font-medium"
                         >
                           {isAdmin ? (
                             <>
@@ -440,7 +438,7 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                        <label className="block text-[11px] font-semibold text-ink mb-1">
                           Current Location Checkpoint
                         </label>
                         <input
@@ -448,13 +446,13 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
                           value={updateLocation}
                           onChange={(e) => setUpdateLocation(e.target.value)}
                           placeholder="e.g. Farm Packing Center"
-                          className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                          className="w-full px-3 py-2 bg-surface border border-line rounded-lg text-xs text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                      <label className="block text-[11px] font-semibold text-ink mb-1">
                         Transit Note (Optional)
                       </label>
                       <input
@@ -462,7 +460,7 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
                         value={updateNote}
                         onChange={(e) => setUpdateNote(e.target.value)}
                         placeholder="e.g. Consignment prepared and labeled"
-                        className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                        className="w-full px-3 py-2 bg-surface border border-line rounded-lg text-xs text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                       />
                     </div>
 
@@ -470,7 +468,7 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
                       <button
                         type="submit"
                         disabled={updating || !selectedNextStatus}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        className="px-4 py-2 bg-brand-800 hover:bg-brand-800 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                       >
                         {updating ? (
                           <>
@@ -493,15 +491,15 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-slate-500 font-mono">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+        <div className="p-4 border-t border-line bg-surface-muted/70 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs text-ink-muted">
+            <ShieldCheck className="w-4 h-4 text-brand-800" />
             <span>FarmDex Verified Agricultural Logistics</span>
           </div>
 
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+            className="px-5 py-2 bg-surface hover:bg-surface-sunken text-ink border border-line text-xs font-semibold rounded-lg transition-colors cursor-pointer"
           >
             Close
           </button>
@@ -510,3 +508,5 @@ export default function DeliveryTrackingModal({ isOpen, onClose, orderId, isFarm
     </div>
   );
 }
+
+

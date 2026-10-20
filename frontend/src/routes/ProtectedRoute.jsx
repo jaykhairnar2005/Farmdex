@@ -8,10 +8,10 @@ export function ProtectedRoute({ children, allowedRoles }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="flex items-center space-x-2 text-emerald-400 font-mono text-sm">
-          <div className="w-4 h-4 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin"></div>
-          <span>Verifying authentication...</span>
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
+        <div className="flex items-center gap-2 text-brand-800 text-sm font-medium">
+          <div className="w-5 h-5 rounded-full border-2 border-brand-800 border-t-transparent animate-spin" />
+          <span>Verifying authentication…</span>
         </div>
       </div>
     );
@@ -23,20 +23,21 @@ export function ProtectedRoute({ children, allowedRoles }) {
 
   if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center space-y-4 shadow-xl">
-          <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mx-auto text-xl font-bold">
+      <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-surface border border-line rounded-2xl p-6 text-center space-y-4 shadow-card">
+          <div className="w-12 h-12 rounded-full bg-danger-soft border border-danger-edge text-danger flex items-center justify-center mx-auto text-xl font-bold">
             !
           </div>
-          <h2 className="text-xl font-bold text-white">Access Denied</h2>
-          <p className="text-sm text-slate-400">
-            Your account role (<span className="font-mono text-emerald-400">{user.role}</span>) is not authorized to view this page.
+          <h2 className="text-xl font-semibold text-ink">Access denied</h2>
+          <p className="text-sm text-ink-muted">
+            Your account role (<span className="font-semibold text-brand-800">{user.role}</span>) is not
+            authorised to view this page.
           </p>
           <Link
             to="/"
-            className="inline-block px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium rounded-lg transition-colors"
+            className="inline-block px-4 py-2 bg-brand-800 hover:bg-brand-900 text-white text-sm font-medium rounded-lg transition-colors"
           >
-            Return to Dashboard
+            Return to dashboard
           </Link>
         </div>
       </div>

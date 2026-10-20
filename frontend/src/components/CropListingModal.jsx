@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X, Save, Sprout, Upload, Trash2, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { fetchCategoriesApi, getFarmsApi, uploadListingImageApi, deleteListingImageApi } from '../services/api';
 
 const listingFormSchema = z.object({
@@ -23,6 +24,7 @@ const defaultUnits = ['kg', 'quintal', 'ton', 'crate', 'bag', 'box', 'bunch'];
 const defaultQualities = ['Premium / Grade A', 'Grade B', 'Export Quality', 'Standard Market Grade'];
 
 export default function CropListingModal({ isOpen, onClose, onSave, listingToEdit, submitting }) {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState([]);
   const [farms, setFarms] = useState([]);
   const [images, setImages] = useState([]);
@@ -208,28 +210,26 @@ export default function CropListingModal({ isOpen, onClose, onSave, listingToEdi
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="max-w-2xl w-full bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6 my-8 animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+      <div className="max-w-2xl w-full bg-surface border border-line rounded-2xl shadow-modal p-6 sm:p-8 space-y-6 my-8 fade-in">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="flex items-center justify-between border-b border-line pb-4">
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
-              <Sprout className="w-6 h-6" />
+            <div className="p-2.5 bg-brand-50 border border-brand-100 rounded-xl text-brand-800">
+              <Sprout className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-lg text-white">
-                {listingToEdit ? 'Edit Crop Listing' : 'Publish New Crop Listing'}
+              <h3 className="font-bold text-lg text-ink">
+                {listingToEdit ? t('modals.cropListing.titleEdit') : t('modals.cropListing.titleNew')}
               </h3>
-              <p className="text-xs text-slate-400">
-                {listingToEdit
-                  ? 'Update details of your active marketplace listing'
-                  : 'List your agricultural produce directly on the FarmDex marketplace'}
+              <p className="text-xs text-ink-muted">
+                {t('modals.cropListing.subtitle')}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 text-ink-subtle hover:text-ink-muted hover:bg-surface-sunken rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -239,48 +239,48 @@ export default function CropListingModal({ isOpen, onClose, onSave, listingToEdi
           {/* Row 1: Crop Name & Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Crop / Produce Name *
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
+                {t('modals.cropListing.cropName')} *
               </label>
               <input
                 type="text"
                 {...register('cropName')}
                 placeholder="e.g. Sharbati Wheat, Alphonso Mango"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink placeholder:text-ink-subtle focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm"
               />
-              {errors.cropName && <p className="text-xs text-rose-400">{errors.cropName.message}</p>}
+              {errors.cropName && <p className="text-xs text-danger">{errors.cropName.message}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Category *
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
+                {t('modals.cropListing.category')} *
               </label>
               <select
                 {...register('categoryId')}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-emerald-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm"
               >
-                <option value="">Select Category...</option>
+                <option value="">{t('common.selectLanguage')}...</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
                 ))}
               </select>
-              {errors.categoryId && <p className="text-xs text-rose-400">{errors.categoryId.message}</p>}
+              {errors.categoryId && <p className="text-xs text-danger">{errors.categoryId.message}</p>}
             </div>
           </div>
 
           {/* Row 2: Farm Location & Quality */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Origin Farm (Optional)
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
+                {t('modals.cropListing.farm')} ({t('common.optional')})
               </label>
               <select
                 {...register('farmId')}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-emerald-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm"
               >
-                <option value="">No specific farm attached</option>
+                <option value="">{t('common.all')}</option>
                 {farms.map((f) => (
                   <option key={f.id} value={f.id}>
                     {f.name} ({f.district || f.state || 'Registered'})
@@ -290,12 +290,12 @@ export default function CropListingModal({ isOpen, onClose, onSave, listingToEdi
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Quality Grade
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
+                {t('modals.cropListing.grade')}
               </label>
               <select
                 {...register('quality')}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-emerald-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm"
               >
                 {defaultQualities.map((q) => (
                   <option key={q} value={q}>
@@ -309,26 +309,26 @@ export default function CropListingModal({ isOpen, onClose, onSave, listingToEdi
           {/* Row 3: Quantity, Unit & Price */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Quantity Available *
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
+                {t('modals.cropListing.quantity')} *
               </label>
               <input
                 type="number"
                 step="0.001"
                 {...register('quantity')}
                 placeholder="500"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm font-mono"
+                className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink placeholder:text-ink-subtle focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm"
               />
-              {errors.quantity && <p className="text-xs text-rose-400">{errors.quantity.message}</p>}
+              {errors.quantity && <p className="text-xs text-danger">{errors.quantity.message}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Unit *
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
+                {t('modals.cropListing.unit')} *
               </label>
               <select
                 {...register('unit')}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-emerald-500 text-sm font-mono"
+                className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm"
               >
                 {defaultUnits.map((u) => (
                   <option key={u} value={u}>
@@ -336,46 +336,46 @@ export default function CropListingModal({ isOpen, onClose, onSave, listingToEdi
                   </option>
                 ))}
               </select>
-              {errors.unit && <p className="text-xs text-rose-400">{errors.unit.message}</p>}
+              {errors.unit && <p className="text-xs text-danger">{errors.unit.message}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Price Per Unit (₹) *
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
+                {t('modals.cropListing.pricePerUnit')} *
               </label>
               <input
                 type="number"
                 step="0.01"
                 {...register('pricePerUnit')}
                 placeholder="2450.00"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm font-mono"
+                className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink placeholder:text-ink-subtle focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm"
               />
-              {errors.pricePerUnit && <p className="text-xs text-rose-400">{errors.pricePerUnit.message}</p>}
+              {errors.pricePerUnit && <p className="text-xs text-danger">{errors.pricePerUnit.message}</p>}
             </div>
           </div>
 
           {/* Row 4: Harvest Date, Location, Organic Switch */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Harvest Date
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
+                {t('modals.cropListing.harvestDate')}
               </label>
               <input
                 type="date"
                 {...register('harvestDate')}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-emerald-500 text-sm font-mono"
+                className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Location / Mandi
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
+                {t('common.location')}
               </label>
               <input
                 type="text"
                 {...register('location')}
                 placeholder="e.g. Nashik, Maharashtra"
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm"
+                className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink placeholder:text-ink-subtle focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm"
               />
             </div>
 
@@ -384,10 +384,10 @@ export default function CropListingModal({ isOpen, onClose, onSave, listingToEdi
                 <input
                   type="checkbox"
                   {...register('isOrganic')}
-                  className="w-4 h-4 text-emerald-600 rounded bg-slate-950 border-slate-800 focus:ring-emerald-500 cursor-pointer"
+                  className="w-4 h-4 text-brand-800 rounded border-line-strong focus:ring-brand-500 cursor-pointer"
                 />
-                <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">
-                  100% Certified Organic
+                <span className="text-xs font-semibold text-brand-800 uppercase tracking-wider">
+                  {t('modals.cropListing.isOrganic')}
                 </span>
               </label>
             </div>
@@ -395,32 +395,32 @@ export default function CropListingModal({ isOpen, onClose, onSave, listingToEdi
 
           {/* Row 5: Description */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-              Produce Description &amp; Specifications
+            <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
+              {t('modals.cropListing.description')}
             </label>
             <textarea
               rows={3}
               {...register('description')}
               placeholder="Describe variety, moisture content, storage conditions, packaging, etc."
-              className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm"
+              className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink placeholder:text-ink-subtle focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm"
             ></textarea>
           </div>
 
           {/* Image Management Section */}
-          <div className="pt-2 border-t border-slate-800 space-y-3">
+          <div className="pt-3 border-t border-line space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                  Produce Photos {listingToEdit ? `(${images.length})` : pendingFiles.length > 0 ? `(${pendingFiles.length} selected)` : ''}
+                <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
+                  {t('modals.cropListing.photos')} {listingToEdit ? `(${images.length})` : pendingFiles.length > 0 ? `(${pendingFiles.length})` : ''}
                 </label>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-ink-muted">
                   {listingToEdit
                     ? 'Manage photos for your active produce listing'
                     : 'Attach photos (JPEG, PNG, WebP up to 5 MB)'}
                 </p>
               </div>
-              <label className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5">
-                <Upload className="w-3.5 h-3.5" />
+              <label className="px-3 py-1.5 bg-surface-sunken hover:bg-surface-muted text-ink text-xs font-medium rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5">
+                <Upload className="w-3.5 h-3.5 text-brand-800" />
                 {uploadingImage ? 'Uploading to Cloudinary...' : listingToEdit ? 'Upload Image' : 'Select Photo'}
                 <input
                   type="file"
@@ -433,8 +433,8 @@ export default function CropListingModal({ isOpen, onClose, onSave, listingToEdi
             </div>
 
             {imageError && (
-              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <div className="p-3 rounded-lg bg-danger-soft border border-danger-edge text-danger text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{imageError}</span>
               </div>
             )}
@@ -444,12 +444,12 @@ export default function CropListingModal({ isOpen, onClose, onSave, listingToEdi
               images.length > 0 ? (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                   {images.map((img) => (
-                    <div key={img.id} className="relative group rounded-xl overflow-hidden border border-slate-800 aspect-video bg-slate-950">
+                    <div key={img.id} className="relative group rounded-lg overflow-hidden border border-line aspect-video bg-surface-sunken">
                       <img src={img.imageUrl} alt="Produce" className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => handleImageDelete(img.id)}
-                        className="absolute top-1.5 right-1.5 p-1 bg-rose-900/80 hover:bg-rose-700 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        className="absolute top-1.5 right-1.5 p-1 bg-red-600/90 hover:bg-red-700 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                         title="Delete image"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -458,23 +458,23 @@ export default function CropListingModal({ isOpen, onClose, onSave, listingToEdi
                   ))}
                 </div>
               ) : (
-                <div className="p-4 rounded-xl border border-dashed border-slate-800 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
-                  <ImageIcon className="w-4 h-4" />
+                <div className="p-4 rounded-xl border border-dashed border-line bg-surface-muted/50 text-center text-xs text-ink-muted flex items-center justify-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-ink-subtle" />
                   <span>No images uploaded yet. Upload JPEG, PNG or WebP images (max 5 MB).</span>
                 </div>
               )
             ) : pendingFiles.length > 0 ? (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {pendingFiles.map((item) => (
-                  <div key={item.id} className="relative group rounded-xl overflow-hidden border border-emerald-500/30 aspect-video bg-slate-950">
+                  <div key={item.id} className="relative group rounded-lg overflow-hidden border border-brand-200 aspect-video bg-surface-sunken">
                     <img src={item.previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                    <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-emerald-950/90 text-emerald-300 text-[9px] font-bold border border-emerald-500/40">
+                    <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-brand-800/90 text-white text-[9px] font-semibold">
                       Ready to upload
                     </span>
                     <button
                       type="button"
                       onClick={() => handlePendingFileDelete(item.id)}
-                      className="absolute top-1.5 right-1.5 p-1 bg-rose-900/80 hover:bg-rose-700 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      className="absolute top-1.5 right-1.5 p-1 bg-red-600/90 hover:bg-red-700 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                       title="Remove image"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -483,33 +483,33 @@ export default function CropListingModal({ isOpen, onClose, onSave, listingToEdi
                 ))}
               </div>
             ) : (
-              <div className="p-4 rounded-xl border border-dashed border-slate-800 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
-                <ImageIcon className="w-4 h-4" />
+              <div className="p-4 rounded-xl border border-dashed border-line bg-surface-muted/50 text-center text-xs text-ink-muted flex items-center justify-center gap-2">
+                <ImageIcon className="w-4 h-4 text-ink-subtle" />
                 <span>No photos selected. You can select photos now or add them later after publishing.</span>
               </div>
             )}
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-line">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors cursor-pointer"
+              className="px-4 py-2.5 bg-surface hover:bg-surface-muted text-ink text-sm font-medium rounded-lg border border-line transition-colors cursor-pointer"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-emerald-950/40 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-sm font-medium rounded-lg shadow-sm transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {submitting ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  <span>{listingToEdit ? 'Save Changes' : 'Publish Listing'}</span>
+                  <span>{listingToEdit ? t('common.save') : t('modals.cropListing.submit')}</span>
                 </>
               )}
             </button>
@@ -519,3 +519,5 @@ export default function CropListingModal({ isOpen, onClose, onSave, listingToEdi
     </div>
   );
 }
+
+

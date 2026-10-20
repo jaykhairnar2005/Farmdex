@@ -6,14 +6,14 @@ import {
   Calendar,
   FileText,
   AlertCircle,
-  CheckCircle2,
   Sprout,
-  User,
-  ShieldCheck,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { dispatchOrderApi } from '../services/api';
+import { formatCurrency, formatNumber } from '../utils/formatters';
 
 export default function DispatchOrderModal({ isOpen, onClose, order, onSuccess }) {
+  const { t, i18n } = useTranslation();
   const [trackingNumber, setTrackingNumber] = useState('');
   const [estimatedDelivery, setEstimatedDelivery] = useState('');
   const [location, setLocation] = useState('');
@@ -76,23 +76,20 @@ export default function DispatchOrderModal({ isOpen, onClose, order, onSuccess }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs fade-in">
+      <div className="relative w-full max-w-lg bg-surface border border-line rounded-2xl shadow-modal overflow-hidden flex flex-col max-h-[90vh] text-ink">
         {/* Header */}
-        <div className="p-5 border-b border-slate-800 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 flex items-center justify-between">
+        <div className="p-5 border-b border-line bg-surface-muted/70 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 text-brand-800 flex items-center justify-center">
               <Truck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                Dispatch Consignment
-                <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                  Milestone 8
-                </span>
+              <h3 className="text-lg font-bold text-ink flex items-center gap-2">
+                {t('modals.dispatch.title')}
               </h3>
-              <p className="text-xs text-slate-400">
-                Confirm carrier dispatch &amp; assign shipment tracking ID
+              <p className="text-xs text-ink-muted">
+                {t('modals.dispatch.subtitle', { id: order.id.slice(0, 8) })}
               </p>
             </div>
           </div>
@@ -100,7 +97,7 @@ export default function DispatchOrderModal({ isOpen, onClose, order, onSuccess }
           <button
             onClick={onClose}
             disabled={submitting}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 text-ink-subtle hover:text-ink-muted rounded-lg hover:bg-surface-sunken transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -109,42 +106,42 @@ export default function DispatchOrderModal({ isOpen, onClose, order, onSuccess }
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 font-sans">
           {error && (
-            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
+            <div className="p-3.5 rounded-xl bg-danger-soft border border-danger-edge text-danger text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Order Details Brief */}
-          <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+          <div className="p-3.5 rounded-xl bg-surface-muted border border-line space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-emerald-400 font-bold">
+              <span className="font-mono text-brand-800 font-bold">
                 #{order.id.slice(0, 13).toUpperCase()}
               </span>
-              <span className="text-slate-400 font-mono">
-                Paid: ₹{Number(order.totalAmount).toLocaleString('en-IN')}
+              <span className="text-ink-muted font-medium">
+                {formatCurrency(order.totalAmount, i18n.language)}
               </span>
             </div>
-            <div className="flex items-center justify-between text-slate-300">
+            <div className="flex items-center justify-between text-ink">
               <span className="flex items-center gap-1.5 font-medium">
-                <Sprout className="w-3.5 h-3.5 text-emerald-400" />
+                <Sprout className="w-3.5 h-3.5 text-brand-800" />
                 {listing?.cropName || 'Produce Batch'}
               </span>
-              <span className="font-mono text-slate-400">
-                {Number(item?.quantity || 0)} {listing?.unit || 'units'}
+              <span className="font-medium text-ink-muted">
+                {formatNumber(item?.quantity || 0, i18n.language)} {listing?.unit || 'units'}
               </span>
             </div>
-            <div className="pt-2 border-t border-slate-900 text-slate-400 flex items-start gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
+            <div className="pt-2 border-t border-line/80 text-ink-muted flex items-start gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-ink-subtle shrink-0 mt-0.5" />
               <span className="line-clamp-1">{order.shippingAddress}</span>
             </div>
           </div>
 
           {/* Tracking Number Input */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-              <Truck className="w-3.5 h-3.5 text-blue-400" />
-              Consignment Tracking Number <span className="text-rose-400">*</span>
+            <label className="block text-xs font-semibold text-ink flex items-center gap-1.5">
+              <Truck className="w-3.5 h-3.5 text-brand-800" />
+              {t('modals.dispatch.trackingNumber')} <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -152,74 +149,71 @@ export default function DispatchOrderModal({ isOpen, onClose, order, onSuccess }
               value={trackingNumber}
               onChange={(e) => setTrackingNumber(e.target.value)}
               placeholder="e.g. FDX-TRK-12345678"
-              className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 font-mono text-xs focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink font-mono text-xs focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
             />
-            <p className="text-[11px] text-slate-500 font-mono">
-              The buyer uses this ID to track consignment in real time.
-            </p>
           </div>
 
           {/* Estimated Delivery Date */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-              Estimated Delivery Date
+            <label className="block text-xs font-semibold text-ink flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-brand-800" />
+              {t('modals.dispatch.estimatedDelivery')}
             </label>
             <input
               type="date"
               value={estimatedDelivery}
               onChange={(e) => setEstimatedDelivery(e.target.value)}
-              className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-xs focus:outline-none focus:border-blue-500 transition-colors font-mono"
+              className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink text-xs focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors font-mono"
             />
           </div>
 
           {/* Dispatch Origin / Location */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-              Dispatch Origin Location
+            <label className="block text-xs font-semibold text-ink flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-brand-800" />
+              {t('common.location')}
             </label>
             <input
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="e.g. Central Farm Godown, Karnal"
-              className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-xs focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink text-xs focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
             />
           </div>
 
           {/* Notes */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5 text-slate-400" />
-              Logistics Notes (Optional)
+            <label className="block text-xs font-semibold text-ink flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5 text-ink-subtle" />
+              {t('modals.dispatch.notes')}
             </label>
             <textarea
               rows={2}
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Carrier name, vehicle number, or special storage notes..."
-              className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-xs focus:outline-none focus:border-blue-500 transition-colors resize-none"
+              className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink text-xs focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors resize-none"
             />
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-line">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+              className="px-4 py-2.5 bg-surface hover:bg-surface-muted text-ink rounded-lg border border-line text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-950/50 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Truck className="w-3.5 h-3.5" />
-              <span>{submitting ? 'Dispatching...' : 'Confirm Dispatch'}</span>
+              <span>{submitting ? t('common.submitting') : t('modals.dispatch.submit')}</span>
             </button>
           </div>
         </form>
@@ -227,3 +221,5 @@ export default function DispatchOrderModal({ isOpen, onClose, order, onSuccess }
     </div>
   );
 }
+
+

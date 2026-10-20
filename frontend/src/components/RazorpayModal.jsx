@@ -9,15 +9,15 @@ import {
   Lock,
   RefreshCw,
   ExternalLink,
-  ChevronRight,
   Sprout,
-  Info,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   createPaymentOrderApi,
   verifyPaymentApi,
   generateTestPaymentSignatureApi,
 } from '../services/api';
+import { formatCurrency } from '../utils/formatters';
 
 /**
  * Loads the official Razorpay checkout script dynamically
@@ -37,6 +37,7 @@ function loadRazorpayScript() {
 }
 
 export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
+  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [stage, setStage] = useState('INIT'); // 'INIT', 'ORDER_CREATED', 'PROCESSING', 'SUCCESS', 'ERROR'
   const [paymentDetails, setPaymentDetails] = useState(null);
@@ -79,7 +80,7 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
         throw new Error(orderRes.message || 'Failed to initialize Razorpay payment order');
       }
 
-      const { razorpayOrderId, amount, currency, keyId } = orderRes.data;
+      const { razorpayOrderId } = orderRes.data;
       setPaymentDetails(orderRes.data);
       setActiveStep(2);
 
@@ -123,7 +124,6 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
       }
 
       // Step 3: Server-side cryptographic signature verification
-      // Requirement 6: Never mark an order PAID based only on frontend confirmation
       setActiveStep(4);
       const verifyRes = await verifyPaymentApi(verificationPayload);
 
@@ -164,7 +164,6 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
 
       const { razorpayOrderId, amount, currency, keyId } = orderRes.data;
 
-      // Note: If running with mock test key, Razorpay will reject on client.
       const options = {
         key: keyId,
         amount,
@@ -203,7 +202,7 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
           },
         },
         theme: {
-          color: '#059669', // FarmDex Emerald
+          color: '#14532D', // FarmDex Forest Green
         },
       };
 
@@ -225,24 +224,24 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs fade-in">
+      <div className="relative w-full max-w-lg bg-surface border border-line rounded-2xl shadow-modal overflow-hidden flex flex-col max-h-[92vh] text-ink">
         {/* Razorpay Brand Header */}
-        <div className="bg-gradient-to-r from-slate-950 via-sky-950 to-slate-950 p-5 border-b border-slate-800 flex items-center justify-between">
+        <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 p-5 border-b border-line flex items-center justify-between text-white">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
+            <div className="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-300">
               <CreditCard className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-base font-extrabold text-white tracking-tight">
-                  Razorpay <span className="text-sky-400 font-semibold text-xs tracking-normal">PAY</span>
+                <span className="text-base font-extrabold tracking-tight">
+                  Razorpay <span className="text-sky-300 font-semibold text-xs tracking-normal">PAY</span>
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-warning-soft0/20 text-amber-300 border border-amber-400/30">
                   TEST MODE
                 </span>
               </div>
-              <p className="text-xs text-slate-400 flex items-center gap-1">
+              <p className="text-xs text-slate-300 flex items-center gap-1">
                 <Lock className="w-3 h-3 text-emerald-400" />
                 256-bit Encrypted Server Settlement
               </p>
@@ -252,7 +251,7 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
           <button
             onClick={onClose}
             disabled={loading}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-surface/10 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -261,46 +260,50 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
         {/* Modal Body */}
         <div className="p-6 space-y-5 overflow-y-auto flex-1 font-sans">
           {/* Order Snapshot */}
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+          <div className="p-4 rounded-xl bg-surface-muted border border-line flex items-center justify-between">
             <div className="space-y-0.5">
-              <span className="text-[10px] text-slate-500 font-mono block">Order Reference</span>
-              <span className="text-xs font-mono font-bold text-emerald-400">
+              <span className="text-[10px] text-ink-muted font-mono block">Order Reference</span>
+              <span className="text-xs font-mono font-bold text-brand-800">
                 #{order.id.slice(0, 13).toUpperCase()}
               </span>
-              <p className="text-xs text-slate-300 flex items-center gap-1 font-medium mt-0.5">
-                <Sprout className="w-3.5 h-3.5 text-emerald-400" />
+              <p className="text-xs text-ink flex items-center gap-1 font-medium mt-0.5">
+                <Sprout className="w-3.5 h-3.5 text-brand-800" />
                 {listing?.cropName || 'Agricultural Produce'}
               </p>
             </div>
 
             <div className="text-right space-y-0.5">
-              <span className="text-[10px] text-slate-500 font-mono block">Amount Payable</span>
-              <span className="text-xl font-black text-emerald-400 font-mono">
-                ₹{totalAmount.toLocaleString('en-IN')}
+              <span className="text-[10px] text-ink-muted font-mono block">{t('modals.razorpay.amountToPay')}</span>
+              <span className="text-xl font-bold text-ink font-mono">
+                {formatCurrency(totalAmount, i18n.language)}
               </span>
-              <span className="text-[10px] text-slate-400 font-mono block">INR (Paise: {totalAmount * 100})</span>
+              <span className="text-[10px] text-ink-subtle font-mono block">INR (Paise: {totalAmount * 100})</span>
             </div>
           </div>
 
-          {/* SUCCESS State View */}
+          {/* Simulation Disclaimer Banner */}
+          <div className="p-3 rounded-xl bg-warning-soft border border-warning-edge text-amber-800 text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
+            <span>{t('modals.razorpay.secureNotice')}</span>
+          </div>
           {stage === 'SUCCESS' && (
             <div className="py-6 text-center space-y-4">
-              <div className="w-14 h-14 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <div className="w-14 h-14 mx-auto rounded-full bg-success-soft border border-success-edge flex items-center justify-center text-success">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-lg font-bold text-white">Payment Verified &amp; Settled!</h3>
-                <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                  Razorpay cryptographic signature was validated on the server. Your order status is confirmed.
+                <h3 className="text-lg font-bold text-ink">{t('modals.razorpay.successTitle')}</h3>
+                <p className="text-xs text-ink-muted max-w-sm mx-auto">
+                  {t('modals.razorpay.successDesc')}
                 </p>
               </div>
 
               <div className="pt-2">
                 <button
                   onClick={onClose}
-                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-emerald-950/40 cursor-pointer"
+                  className="px-6 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-xs font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
                 >
-                  View Updated Orders &amp; Receipt
+                  {t('orders.card.actions.viewReceipt')}
                 </button>
               </div>
             </div>
@@ -308,11 +311,11 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
 
           {/* PROCESSING State View */}
           {stage === 'PROCESSING' && (
-            <div className="py-6 space-y-4 text-center">
-              <div className="w-12 h-12 mx-auto rounded-full border-2 border-sky-500/20 border-t-sky-400 animate-spin" />
+            <div className="py-8 space-y-4 text-center">
+              <div className="w-10 h-10 mx-auto rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-white">Processing Secure Settlement</h4>
-                <p className="text-xs text-slate-400 font-mono">
+                <h4 className="text-sm font-bold text-ink">{t('modals.razorpay.processing')}</h4>
+                <p className="text-xs text-ink-muted font-mono">
                   {activeStep === 1 && '1/4 Initializing Razorpay order on backend...'}
                   {activeStep === 2 && '2/4 Order created. Requesting authorization...'}
                   {activeStep === 3 && '3/4 Generating cryptographic HMAC payload...'}
@@ -326,18 +329,18 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
           {(stage === 'INIT' || stage === 'ERROR') && (
             <>
               {errorMessage && (
-                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-start gap-2.5">
+                <div className="p-3.5 rounded-xl bg-danger-soft border border-danger-edge text-danger text-xs flex items-start gap-2.5">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <div className="space-y-0.5">
                     <p className="font-semibold">Payment Action Failed</p>
-                    <p className="text-[11px] text-rose-300/80 leading-relaxed">{errorMessage}</p>
+                    <p className="text-[11px] text-danger leading-relaxed">{errorMessage}</p>
                   </div>
                 </div>
               )}
 
               {/* Simulation Mode Selection */}
               <div className="space-y-2.5">
-                <label className="block text-xs font-semibold text-slate-300 font-mono uppercase tracking-wider">
+                <label className="block text-xs font-semibold text-ink uppercase tracking-wider">
                   Select Test Gateway Scenario
                 </label>
 
@@ -346,29 +349,29 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
                   onClick={() => setSelectedScenario('SUCCESS')}
                   className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
                     selectedScenario === 'SUCCESS'
-                      ? 'bg-sky-950/30 border-sky-500/50 shadow-md shadow-sky-950/40'
-                      : 'bg-slate-950/50 border-slate-800 hover:border-slate-700'
+                      ? 'bg-success-soft/70 border-brand-500 shadow-card'
+                      : 'bg-surface border-line hover:border-line-strong'
                   }`}
                 >
                   <div
                     className={`p-2 rounded-lg mt-0.5 ${
                       selectedScenario === 'SUCCESS'
-                        ? 'bg-sky-500/20 text-sky-400'
-                        : 'bg-slate-800 text-slate-400'
+                        ? 'bg-brand-100 text-brand-800'
+                        : 'bg-surface-sunken text-ink-muted'
                     }`}
                   >
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div className="flex-1 space-y-0.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white">
+                      <span className="text-xs font-bold text-ink">
                         Standard Razorpay Test Payment (Success)
                       </span>
-                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
+                      <span className="text-[10px] font-mono text-brand-800 bg-brand-50 px-1.5 py-0.2 rounded border border-brand-200">
                         Valid HMAC
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                    <p className="text-[11px] text-ink-muted leading-relaxed">
                       Creates test order, executes payment, and submits valid cryptographic HMAC SHA-256 signature for server verification.
                     </p>
                   </div>
@@ -379,29 +382,29 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
                   onClick={() => setSelectedScenario('TAMPERED_SIG')}
                   className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
                     selectedScenario === 'TAMPERED_SIG'
-                      ? 'bg-amber-950/30 border-amber-500/50 shadow-md shadow-amber-950/40'
-                      : 'bg-slate-950/50 border-slate-800 hover:border-slate-700'
+                      ? 'bg-warning-soft/70 border-amber-500 shadow-card'
+                      : 'bg-surface border-line hover:border-line-strong'
                   }`}
                 >
                   <div
                     className={`p-2 rounded-lg mt-0.5 ${
                       selectedScenario === 'TAMPERED_SIG'
-                        ? 'bg-amber-500/20 text-amber-400'
-                        : 'bg-slate-800 text-slate-400'
+                        ? 'bg-warning-soft text-warning'
+                        : 'bg-surface-sunken text-ink-muted'
                     }`}
                   >
                     <AlertTriangle className="w-4 h-4" />
                   </div>
                   <div className="flex-1 space-y-0.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white">
+                      <span className="text-xs font-bold text-ink">
                         Simulate Tampered Signature (Security Test)
                       </span>
-                      <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20">
+                      <span className="text-[10px] font-mono text-warning bg-warning-soft px-1.5 py-0.2 rounded border border-warning-edge">
                         Server Rejection
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                    <p className="text-[11px] text-ink-muted leading-relaxed">
                       Sends an unauthorized forged signature to confirm that the server strictly rejects fraudulent confirmation with HTTP 400.
                     </p>
                   </div>
@@ -412,29 +415,29 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
                   onClick={() => setSelectedScenario('GATEWAY_ERROR')}
                   className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
                     selectedScenario === 'GATEWAY_ERROR'
-                      ? 'bg-rose-950/30 border-rose-500/50 shadow-md shadow-rose-950/40'
-                      : 'bg-slate-950/50 border-slate-800 hover:border-slate-700'
+                      ? 'bg-danger-soft/70 border-red-500 shadow-card'
+                      : 'bg-surface border-line hover:border-line-strong'
                   }`}
                 >
                   <div
                     className={`p-2 rounded-lg mt-0.5 ${
                       selectedScenario === 'GATEWAY_ERROR'
-                        ? 'bg-rose-500/20 text-rose-400'
-                        : 'bg-slate-800 text-slate-400'
+                        ? 'bg-red-100 text-danger'
+                        : 'bg-surface-sunken text-ink-muted'
                     }`}
                   >
                     <AlertCircle className="w-4 h-4" />
                   </div>
                   <div className="flex-1 space-y-0.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-white">
+                      <span className="text-xs font-bold text-ink">
                         Simulate Payment Decline (Failure Handling)
                       </span>
-                      <span className="text-[10px] font-mono text-rose-400 bg-rose-500/10 px-1.5 py-0.2 rounded border border-rose-500/20">
+                      <span className="text-[10px] font-mono text-danger bg-danger-soft px-1.5 py-0.2 rounded border border-danger-edge">
                         Error State
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                    <p className="text-[11px] text-ink-muted leading-relaxed">
                       Simulates a failed card/UPI authorization to ensure the order is kept safe and payment state reflects failure.
                     </p>
                   </div>
@@ -442,8 +445,8 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
               </div>
 
               {/* Informational Security Notice */}
-              <div className="p-3 bg-slate-950 border border-slate-800/80 rounded-xl flex items-center gap-2.5 text-xs text-slate-400 font-mono">
-                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="p-3 bg-surface-muted border border-line rounded-xl flex items-center gap-2.5 text-xs text-ink-muted">
+                <ShieldCheck className="w-4 h-4 text-brand-800 shrink-0" />
                 <span>
                   Rule: Server uses constant-time HMAC comparison before marking orders PAID.
                 </span>
@@ -454,11 +457,11 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
 
         {/* Modal Footer Actions */}
         {stage !== 'SUCCESS' && (
-          <div className="p-4 border-t border-slate-800 bg-slate-950/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="p-4 border-t border-line bg-surface-muted flex flex-col sm:flex-row items-center justify-between gap-3">
             <button
               onClick={handleOpenOfficialRazorpay}
               disabled={loading}
-              className="text-xs text-slate-400 hover:text-sky-300 font-medium flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+              className="text-xs text-ink-muted hover:text-brand-800 font-medium flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
               title="Open Razorpay popup if you have official test keys configured"
             >
               <span>Try Official Razorpay Popup</span>
@@ -470,21 +473,21 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 bg-surface hover:bg-surface-sunken text-ink border border-line rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
 
               <button
                 type="button"
                 onClick={handleExecutePayment}
                 disabled={loading}
-                className="px-5 py-2.5 bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-sky-950/50 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                className="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {loading ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Processing...</span>
+                    <span>{t('modals.razorpay.processing')}</span>
                   </>
                 ) : (
                   <>
@@ -494,7 +497,7 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
                         ? 'Execute Tampered Signature'
                         : selectedScenario === 'GATEWAY_ERROR'
                         ? 'Execute Simulated Failure'
-                        : 'Confirm & Settle Payment'}
+                        : t('modals.razorpay.paySimulated')}
                     </span>
                   </>
                 )}
@@ -506,3 +509,5 @@ export default function RazorpayModal({ isOpen, onClose, order, onSuccess }) {
     </div>
   );
 }
+
+

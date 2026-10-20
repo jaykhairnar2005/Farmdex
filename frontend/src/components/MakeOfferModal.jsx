@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { X, Tag, Handshake, AlertCircle, Calendar, MessageSquare, ArrowRight } from 'lucide-react';
+import { X, Handshake, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { createOfferApi } from '../services/api';
+import { formatCurrency, formatNumber } from '../utils/formatters';
 
 const makeOfferSchema = z.object({
   offeredPrice: z
@@ -21,6 +23,7 @@ const makeOfferSchema = z.object({
 });
 
 export default function MakeOfferModal({ isOpen, onClose, listing, onSuccess }) {
+  const { t, i18n } = useTranslation();
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
 
@@ -77,46 +80,46 @@ export default function MakeOfferModal({ isOpen, onClose, listing, onSuccess }) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="max-w-lg w-full bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6 animate-in fade-in zoom-in duration-200 my-8">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+      <div className="max-w-lg w-full bg-surface border border-line rounded-2xl shadow-modal p-6 sm:p-7 space-y-5 fade-in my-8 text-ink">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="flex items-center justify-between border-b border-line pb-4">
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
-              <Handshake className="w-6 h-6" />
+            <div className="p-2.5 bg-brand-50 border border-brand-100 rounded-xl text-brand-800">
+              <Handshake className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-lg text-white">Place Trade Offer</h3>
-              <p className="text-xs text-slate-400">Direct mandi price negotiation with farmer</p>
+              <h3 className="font-bold text-lg text-ink">{t('modals.makeOffer.title')}</h3>
+              <p className="text-xs text-ink-muted">{t('modals.makeOffer.subtitle')}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 text-ink-subtle hover:text-ink-muted hover:bg-surface-sunken rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Produce Overview Summary */}
-        <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+        <div className="p-4 rounded-xl bg-surface-muted border border-line space-y-2 text-xs">
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-slate-200 text-sm">{listing.cropName}</span>
-            <span className="font-mono text-slate-400">
-              Stock: {Number(listing.quantity).toLocaleString('en-IN')} {listing.unit}
+            <span className="font-semibold text-ink text-sm">{listing.cropName}</span>
+            <span className="text-ink-muted">
+              {t('common.quantity')}: {formatNumber(listing.quantity, i18n.language)} {listing.unit}
             </span>
           </div>
-          <div className="flex items-center justify-between text-slate-400">
-            <span>Farmer Asking Price:</span>
-            <span className="font-mono text-emerald-400 font-semibold text-sm">
-              ₹{Number(listing.pricePerUnit).toLocaleString('en-IN')} / {listing.unit}
+          <div className="flex items-center justify-between text-ink-muted">
+            <span>{t('modals.makeOffer.listedRate')}:</span>
+            <span className="text-brand-800 font-bold text-sm">
+              {formatCurrency(listing.pricePerUnit, i18n.language)} / {listing.unit}
             </span>
           </div>
         </div>
 
         {serverError && (
-          <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <div className="p-3 rounded-lg bg-danger-soft border border-danger-edge text-danger text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{serverError}</span>
           </div>
         )}
@@ -125,48 +128,48 @@ export default function MakeOfferModal({ isOpen, onClose, listing, onSuccess }) 
           {/* Row 1: Offered Price & Quantity */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Your Offer Price (₹/{listing.unit}) *
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
+                {t('modals.makeOffer.offerRate')} (₹/{listing.unit}) *
               </label>
               <input
                 type="number"
                 step="0.01"
                 {...register('offeredPrice')}
                 placeholder={String(listing.pricePerUnit)}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-emerald-500 text-sm font-mono"
+                className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm font-medium"
               />
-              {errors.offeredPrice && <p className="text-xs text-rose-400">{errors.offeredPrice.message}</p>}
+              {errors.offeredPrice && <p className="text-xs text-danger">{errors.offeredPrice.message}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Quantity ({listing.unit}) *
+              <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
+                {t('common.quantity')} ({listing.unit}) *
               </label>
               <input
                 type="number"
                 step="0.001"
                 {...register('quantity')}
                 placeholder={`Max ${listing.quantity}`}
-                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-emerald-500 text-sm font-mono"
+                className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm font-medium"
               />
-              {errors.quantity && <p className="text-xs text-rose-400">{errors.quantity.message}</p>}
+              {errors.quantity && <p className="text-xs text-danger">{errors.quantity.message}</p>}
             </div>
           </div>
 
           {/* Real-time Calculation Summary */}
           {totalValue > 0 && (
-            <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-2 text-xs">
+            <div className="p-4 rounded-xl bg-brand-50 border border-brand-200 space-y-1.5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Total Offered Batch Value:</span>
-                <span className="font-mono text-emerald-400 font-bold text-base">
-                  ₹{Math.round(totalValue).toLocaleString('en-IN')}
+                <span className="text-ink-muted">{t('modals.makeOffer.estimatedSettlement')}:</span>
+                <span className="text-brand-800 font-bold text-base">
+                  {formatCurrency(Math.round(totalValue), i18n.language)}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-[11px] text-slate-400">
-                <span>Asking Total: ₹{Math.round(askingTotal).toLocaleString('en-IN')}</span>
+              <div className="flex items-center justify-between text-[11px] text-ink-muted">
+                <span>{t('modals.makeOffer.listedRate')}: {formatCurrency(Math.round(askingTotal), i18n.language)}</span>
                 <span
-                  className={`font-semibold font-mono ${
-                    priceDiffPct < 0 ? 'text-amber-400' : 'text-emerald-400'
+                  className={`font-semibold ${
+                    priceDiffPct < 0 ? 'text-warning' : 'text-brand-800'
                   }`}
                 >
                   {priceDiffPct === 0
@@ -179,51 +182,51 @@ export default function MakeOfferModal({ isOpen, onClose, listing, onSuccess }) 
 
           {/* Expiry Date (Optional) */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-              Offer Expiry Date (Optional)
+            <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
+              {t('common.date')} ({t('common.optional')})
             </label>
             <input
               type="date"
               {...register('expiresAt')}
               min={new Date().toISOString().slice(0, 10)}
-              className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-emerald-500 text-sm font-mono"
+              className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm"
             />
           </div>
 
           {/* Note / Message to Farmer */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-              Trade Note / Delivery Terms
+            <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
+              {t('modals.makeOffer.deliveryTerms')}
             </label>
             <textarea
               rows={2}
               {...register('message')}
-              placeholder="e.g. Can arrange mandi pickup by Friday; payment on delivery."
-              className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm"
+              placeholder={t('modals.makeOffer.deliveryTermsPlaceholder')}
+              className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink placeholder:text-ink-subtle focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm"
             ></textarea>
-            {errors.message && <p className="text-xs text-rose-400">{errors.message.message}</p>}
+            {errors.message && <p className="text-xs text-danger">{errors.message.message}</p>}
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-end space-x-3 pt-4 border-t border-line">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-xl transition-colors cursor-pointer"
+              className="px-4 py-2.5 bg-surface hover:bg-surface-muted text-ink text-sm font-medium rounded-lg border border-line transition-colors cursor-pointer"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl shadow-lg shadow-emerald-950/40 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white text-sm font-medium rounded-lg shadow-sm transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {submitting ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 <>
                   <Handshake className="w-4 h-4" />
-                  <span>Submit Offer</span>
+                  <span>{t('modals.makeOffer.submit')}</span>
                 </>
               )}
             </button>
@@ -233,3 +236,5 @@ export default function MakeOfferModal({ isOpen, onClose, listing, onSuccess }) 
     </div>
   );
 }
+
+

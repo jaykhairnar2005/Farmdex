@@ -1,202 +1,205 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Tractor, Edit2, Trash2, MapPin, AlertCircle, CheckCircle2 } from 'lucide-react';
-import Navbar from '../components/Navbar';
+import { useTranslation } from 'react-i18next';
+import { Plus, Tractor, Trash2, MapPin, Edit2 } from 'lucide-react';
+import {
+  PageHeader, StatCard, Card, InlineAlert, EmptyState, Button, Tooltip,
+  ConfirmDialog, SkeletonBlock,
+} from '../components/ui';
+import AppLayout from '../layouts/AppLayout';
 import FarmModal from '../components/FarmModal';
 import { getFarmsApi, createFarmApi, updateFarmApi, deleteFarmApi } from '../services/api';
+import { DEFAULT_FARM_HERO_IMAGE } from '../utils/cropImages';
+import { formatDate } from '../utils/formatters';
 
 export default function Farms() {
+  const { t } = useTranslation();
   const [farms, setFarms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [farmToEdit, setFarmToEdit] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
-  const [deletingId, setDeletingId] = useState(null);
+  const [alert, setAlert] = useState({ type: '', text: '' });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadFarms = useCallback(async () => {
     try {
       setLoading(true);
       const res = await getFarmsApi();
-      if (res.success && Array.isArray(res.data)) {
-        setFarms(res.data);
-      }
+      if (res.success && Array.isArray(res.data)) setFarms(res.data);
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to load farms' });
+      setAlert({ type: 'error', text: err.response?.data?.message || t('common.error', 'Failed to load farms') });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
-  useEffect(() => {
-    loadFarms();
-  }, [loadFarms]);
-
-  const handleOpenAddModal = () => {
-    setFarmToEdit(null);
-    setModalOpen(true);
-  };
-
-  const handleOpenEditModal = (farm) => {
-    setFarmToEdit(farm);
-    setModalOpen(true);
-  };
+  useEffect(() => { loadFarms(); }, [loadFarms]);
 
   const handleSaveFarm = async (farmData) => {
-    setMessage({ type: '', text: '' });
+    setAlert({ type: '', text: '' });
     setSubmitting(true);
     try {
       if (farmToEdit) {
         await updateFarmApi(farmToEdit.id, farmData);
-        setMessage({ type: 'success', text: 'Farm updated successfully!' });
+        setAlert({ type: 'success', text: t('common.saved', 'Farm updated successfully.') });
       } else {
         await createFarmApi(farmData);
-        setMessage({ type: 'success', text: 'Farm registered successfully!' });
+        setAlert({ type: 'success', text: t('common.saved', 'Farm registered successfully.') });
       }
       setModalOpen(false);
       await loadFarms();
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to save farm details' });
+      setAlert({ type: 'error', text: err.response?.data?.message || t('common.error', 'Failed to save farm') });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDeleteFarm = async (farmId, farmName) => {
-    if (!window.confirm(`Are you sure you want to delete '${farmName}'?`)) return;
-
-    setMessage({ type: '', text: '' });
-    setDeletingId(farmId);
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await deleteFarmApi(farmId);
-      setMessage({ type: 'success', text: `Farm '${farmName}' deleted successfully.` });
+      await deleteFarmApi(deleteTarget.id);
+      setAlert({ type: 'success', text: `Farm "${deleteTarget.name}" deleted.` });
+      setDeleteTarget(null);
       await loadFarms();
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to delete farm' });
+      setAlert({ type: 'error', text: err.response?.data?.message || t('common.error', 'Failed to delete farm') });
     } finally {
-      setDeletingId(null);
+      setDeleting(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <Navbar />
+  const totalAcreage = farms.reduce((acc, f) => acc + (parseFloat(f.size) || 0), 0);
 
-      <main className="max-w-6xl mx-auto w-full p-4 sm:p-8 space-y-6 flex-1">
-        {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Tractor className="w-7 h-7 text-emerald-400" /> My Registered Farms
-            </h1>
-            <p className="text-sm text-slate-400">
-              Manage your individual farm locations, sizes, and geographic coordinates
-            </p>
-          </div>
-          <button
-            onClick={handleOpenAddModal}
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl shadow-lg shadow-emerald-950/40 transition-all flex items-center gap-2 cursor-pointer self-start sm:self-auto text-sm"
-          >
-            <Plus className="w-4 h-4" /> Add New Farm
-          </button>
+  return (
+    <AppLayout width="narrow">
+      <div className="space-y-6 fade-in">
+        <PageHeader
+          icon={<Tractor />}
+          eyebrow={t('home.heroTag', 'Agricultural marketplace')}
+          title={t('farms.title', 'My Registered Farms')}
+          subtitle={t('farms.subtitle', 'Manage the agricultural land, soil types, and acreage where your produce is cultivated.')}
+          actions={
+            <Button icon={<Plus className="w-4 h-4" />} onClick={() => { setFarmToEdit(null); setModalOpen(true); }}>
+              {t('farms.registerNew', 'Register New Farm')}
+            </Button>
+          }
+        />
+
+        {/* Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <StatCard label={t('farms.title', 'Registered Farms')} value={farms.length} icon={<Tractor />} tone="brand" />
+          <StatCard
+            label={t('farms.acres', { count: totalAcreage > 0 ? totalAcreage.toFixed(1) : 0, defaultValue: `${totalAcreage.toFixed(1)} Acres` })}
+            value={totalAcreage > 0 ? `${totalAcreage.toFixed(1)} acres` : '—'}
+            icon={<Tractor />}
+          />
+          <StatCard
+            label={t('common.location', 'Location')}
+            value={farms[0]?.state ? [farms[0].district, farms[0].state].filter(Boolean).join(', ') : '—'}
+            icon={<MapPin />}
+          />
         </div>
 
-        {/* Status Alert */}
-        {message.text && (
-          <div
-            className={`p-4 rounded-xl text-sm flex items-center gap-3 border ${
-              message.type === 'success'
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-            }`}
-          >
-            {message.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-            <span>{message.text}</span>
-          </div>
+        {alert.text && (
+          <InlineAlert type={alert.type} message={alert.text} onDismiss={() => setAlert({ type: '', text: '' })} />
         )}
 
-        {/* Farms Grid */}
+        {/* Grid */}
         {loading ? (
-          <div className="py-16 text-center text-slate-500 font-mono text-sm animate-pulse">
-            Loading your registered farms...
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="overflow-hidden">
+                <SkeletonBlock className="h-28 w-full rounded-none" />
+                <div className="p-5 space-y-3">
+                  <SkeletonBlock className="h-4 w-2/3" />
+                  <SkeletonBlock className="h-3 w-full" />
+                  <SkeletonBlock className="h-3 w-1/2" />
+                </div>
+              </Card>
+            ))}
           </div>
         ) : farms.length === 0 ? (
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center space-y-4 shadow-xl max-w-md mx-auto my-8">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
-              <Tractor className="w-6 h-6" />
-            </div>
-            <h3 className="font-bold text-lg text-white">No Farms Registered Yet</h3>
-            <p className="text-xs text-slate-400">
-              You haven&apos;t registered any farm locations. Click below to add your first farm.
-            </p>
-            <button
-              onClick={handleOpenAddModal}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-xl shadow-md transition-all inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" /> Add First Farm
-            </button>
-          </div>
+          <EmptyState
+            icon={Tractor}
+            title={t('farms.empty', 'No farms registered yet')}
+            message={t('farms.emptyDesc', 'Register your farm locations so buyers can trace the verified origin of your produce.')}
+            action={{ label: t('farms.registerFirst', 'Register your first farm'), onClick: () => { setFarmToEdit(null); setModalOpen(true); } }}
+          />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 stagger">
             {farms.map((farm) => (
-              <div
-                key={farm.id}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl flex flex-col justify-between hover:border-slate-700 transition-all"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-bold text-lg text-white line-clamp-1">{farm.name}</h3>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleOpenEditModal(farm)}
-                        className="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-                        title="Edit Farm"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteFarm(farm.id, farm.name)}
-                        disabled={deletingId === farm.id}
-                        className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                        title="Delete Farm"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+              <Card key={farm.id} className="overflow-hidden flex flex-col hover:shadow-card-hover transition-shadow">
+                {/* Banner */}
+                <div className="h-28 relative overflow-hidden">
+                  <img
+                    src={DEFAULT_FARM_HERO_IMAGE}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-brand-950/55" />
+                  <div className="absolute inset-0 p-4 flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-white/15 text-white backdrop-blur-sm border border-white/20">
+                        {t('cropDetail.registeredFarm', 'Farm plot')}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <Tooltip label={t('common.edit', 'Edit farm')}>
+                          <button
+                            onClick={() => { setFarmToEdit(farm); setModalOpen(true); }}
+                            className="p-1.5 text-white/85 hover:text-white hover:bg-white/15 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        </Tooltip>
+                        <Tooltip label={t('common.delete', 'Delete farm')}>
+                          <button
+                            onClick={() => setDeleteTarget(farm)}
+                            className="p-1.5 text-white/85 hover:text-white hover:bg-white/15 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </Tooltip>
+                      </div>
                     </div>
+                    <h3 className="font-semibold text-base text-white tracking-tight line-clamp-1">{farm.name}</h3>
                   </div>
+                </div>
 
-                  <div className="space-y-1.5 text-xs text-slate-400">
+                {/* Body */}
+                <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
+                  <div className="space-y-2 text-xs">
                     {farm.size && (
-                      <p>
-                        <span className="text-slate-500 font-semibold">Authoritative Size:</span>{' '}
-                        <span className="text-emerald-400 font-mono font-semibold">{farm.size} Acres</span>
-                      </p>
+                      <div className="flex items-center justify-between bg-brand-50/70 px-3 py-1.5 rounded-md border border-brand-100">
+                        <span className="text-ink-muted">{t('modals.farm.size', 'Land size')}</span>
+                        <span className="text-brand-800 font-semibold">{t('farms.acres', { count: farm.size })}</span>
+                      </div>
                     )}
-
-                    <div className="flex items-start gap-1 text-slate-300">
-                      <MapPin className="w-3.5 h-3.5 text-slate-500 mt-0.5 flex-shrink-0" />
-                      <span>
-                        {[farm.address, farm.district, farm.state, farm.pincode].filter(Boolean).join(', ') ||
-                          'Location not specified'}
+                    <div className="flex items-start gap-1.5 text-ink-muted pt-1">
+                      <MapPin className="w-3.5 h-3.5 text-brand-700 mt-0.5 shrink-0" />
+                      <span className="line-clamp-2">
+                        {[farm.address, farm.district, farm.state, farm.pincode].filter(Boolean).join(', ') || '—'}
                       </span>
                     </div>
-
-                    {(farm.latitude || farm.longitude) && (
-                      <p className="font-mono text-[11px] text-slate-500 pt-1">
-                        GPS: {farm.latitude || 'N/A'}, {farm.longitude || 'N/A'}
+                    {(farm.soilType || farm.waterSource) && (
+                      <p className="text-[11px] text-ink-subtle">
+                        {[farm.soilType, farm.waterSource].filter(Boolean).join(' · ')}
                       </p>
                     )}
                   </div>
+                  <div className="pt-3 border-t border-line text-[11px] text-ink-subtle flex justify-between">
+                    <span className="font-mono">ID: {farm.id.substring(0, 8)}…</span>
+                    <span>{formatDate(farm.createdAt)}</span>
+                  </div>
                 </div>
-
-                <div className="pt-3 border-t border-slate-800/80 text-[10px] text-slate-500 font-mono flex justify-between items-center">
-                  <span>ID: {farm.id.substring(0, 8)}...</span>
-                  <span>Registered: {new Date(farm.createdAt).toLocaleDateString()}</span>
-                </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
-      </main>
+      </div>
 
       <FarmModal
         isOpen={modalOpen}
@@ -205,6 +208,18 @@ export default function Farms() {
         farmToEdit={farmToEdit}
         submitting={submitting}
       />
-    </div>
+
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirm}
+        loading={deleting}
+        title={t('common.delete', 'Delete farm')}
+        message={t('farms.deleteConfirm', `Are you sure you want to delete this farm? Existing crop listings tied to this farm may be affected.`)}
+        confirmLabel={t('common.delete', 'Delete')}
+        cancelLabel={t('common.cancel', 'Cancel')}
+        tone="danger"
+      />
+    </AppLayout>
   );
 }

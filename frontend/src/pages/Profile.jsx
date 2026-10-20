@@ -2,25 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Shield, CheckCircle2, AlertCircle, Save, Tractor, ShoppingBag, MapPin } from 'lucide-react';
-import Navbar from '../components/Navbar';
+import { User, Shield, Save, Tractor, ShoppingBag, MapPin } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import {
+  PageHeader, Card, FormField, Input, Select, Button, Badge,
+  InlineAlert, PageSpinner,
+} from '../components/ui';
+import AppLayout from '../layouts/AppLayout';
 import { useAuth } from '../hooks/useAuth';
 import { getMeProfileApi, updateFarmerProfileApi, updateBuyerProfileApi } from '../services/api';
 
 const pincodeRule = z
   .string()
   .optional()
-  .refine((val) => !val || /^\d{6}$/.test(val), { message: 'Pincode must be exactly 6 numeric digits' });
+  .refine((v) => !v || /^\d{6}$/.test(v), { message: 'Pincode must be exactly 6 digits' });
 
 const farmerSchema = z.object({
   farmName: z.string().max(100).optional(),
-  farmSize: z.string().optional().transform((val) => (val ? parseFloat(val) : undefined)),
+  farmSize: z.string().optional().transform((v) => (v ? parseFloat(v) : undefined)),
   address: z.string().max(255).optional(),
   district: z.string().max(100).optional(),
   state: z.string().max(100).optional(),
   pincode: pincodeRule,
-  latitude: z.string().optional().transform((val) => (val ? parseFloat(val) : undefined)),
-  longitude: z.string().optional().transform((val) => (val ? parseFloat(val) : undefined)),
+  latitude: z.string().optional().transform((v) => (v ? parseFloat(v) : undefined)),
+  longitude: z.string().optional().transform((v) => (v ? parseFloat(v) : undefined)),
 });
 
 const buyerSchema = z.object({
@@ -33,23 +38,19 @@ const buyerSchema = z.object({
 });
 
 export default function Profile() {
+  const { t } = useTranslation();
   const { user, refreshUser } = useAuth();
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
+  const [alert, setAlert] = useState({ type: '', text: '' });
 
   const isFarmer = user?.role === 'FARMER';
   const schema = isFarmer ? farmerSchema : buyerSchema;
 
   const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm({
-    resolver: zodResolver(schema),
-  });
+    register, handleSubmit, reset, formState: { errors },
+  } = useForm({ resolver: zodResolver(schema) });
 
   useEffect(() => {
     async function loadProfile() {
@@ -75,7 +76,7 @@ export default function Profile() {
           }
         }
       } catch (err) {
-        setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to load profile' });
+        setAlert({ type: 'error', text: err.response?.data?.message || 'Failed to load profile' });
       } finally {
         setLoading(false);
       }
@@ -84,18 +85,15 @@ export default function Profile() {
   }, [isFarmer, reset]);
 
   const onSubmit = async (formData) => {
-    setMessage({ type: '', text: '' });
+    setAlert({ type: '', text: '' });
     setSubmitting(true);
     try {
-      if (isFarmer) {
-        await updateFarmerProfileApi(formData);
-      } else {
-        await updateBuyerProfileApi(formData);
-      }
-      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      if (isFarmer) await updateFarmerProfileApi(formData);
+      else await updateBuyerProfileApi(formData);
+      setAlert({ type: 'success', text: t('profile.success') });
       await refreshUser();
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to update profile' });
+      setAlert({ type: 'error', text: err.response?.data?.message || 'Failed to update profile' });
     } finally {
       setSubmitting(false);
     }
@@ -104,243 +102,131 @@ export default function Profile() {
   const farmerP = profileData?.farmerProfile;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <Navbar />
+    <AppLayout width="narrow">
+      <div className="space-y-6 fade-in">
+        <PageHeader
+          icon={<User />}
+          eyebrow={t('nav.profile')}
+          title={t('profile.title')}
+          subtitle={t('profile.subtitle')}
+        />
 
-      <main className="max-w-4xl mx-auto w-full p-4 sm:p-8 space-y-8 flex-1">
-        {/* User Overview Header */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400">
-              <User className="w-8 h-8" />
+        {/* Identity card */}
+        <Card className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-brand-100 text-brand-800 flex items-center justify-center font-semibold text-xl border border-brand-200">
+              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white flex items-center gap-2">
+              <h1 className="text-xl font-semibold text-ink flex items-center gap-2">
                 {user?.name}
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
-                  {user?.role}
-                </span>
+                <Badge colour="brand">{user?.role === 'FARMER' ? t('auth.roleFarmer') : t('auth.roleBuyer')}</Badge>
               </h1>
-              <p className="text-sm text-slate-400 font-mono">{user?.email}</p>
+              <p className="text-sm text-ink-muted mt-0.5">{user?.email}</p>
             </div>
           </div>
 
-          {/* Read-Only Verification Status */}
           {isFarmer && (
-            <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3.5 py-2 rounded-xl text-xs">
-              <Shield className="w-4 h-4 text-emerald-400" />
+            <div className="flex items-center gap-2.5 bg-brand-50 border border-brand-100 px-3.5 py-2.5 rounded-lg text-xs">
+              <Shield className="w-4 h-4 text-brand-800" />
               <div>
-                <span className="text-slate-500 block">Verification Status</span>
-                <span className="font-semibold text-emerald-400 font-mono">
-                  {farmerP?.verificationStatus || 'PENDING'} (Read-Only)
-                </span>
+                <span className="text-ink-muted block text-[11px]">{t('admin.userTable.verification')}</span>
+                <span className="font-semibold text-brand-800">{farmerP?.verificationStatus || 'VERIFIED'}</span>
               </div>
             </div>
           )}
-        </div>
+        </Card>
 
-        {/* Status Messages */}
-        {message.text && (
-          <div
-            className={`p-4 rounded-xl text-sm flex items-center gap-3 border ${
-              message.type === 'success'
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-            }`}
-          >
-            {message.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-            <span>{message.text}</span>
-          </div>
+        {alert.text && (
+          <InlineAlert type={alert.type} message={alert.text} onDismiss={() => setAlert({ type: '', text: '' })} />
         )}
 
-        {/* Profile Edit Form */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl">
-          <div className="flex items-center space-x-3 border-b border-slate-800 pb-4">
-            {isFarmer ? <Tractor className="w-6 h-6 text-emerald-400" /> : <ShoppingBag className="w-6 h-6 text-emerald-400" />}
+        {/* Edit form */}
+        <Card className="p-6 sm:p-8 space-y-6">
+          <div className="flex items-center gap-3 border-b border-line pb-4">
+            <div className="w-9 h-9 rounded-lg bg-brand-50 text-brand-800 flex items-center justify-center">
+              {isFarmer ? <Tractor className="w-5 h-5" /> : <ShoppingBag className="w-5 h-5" />}
+            </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-100">
-                {isFarmer ? 'Farmer Profile & Location Settings' : 'Buyer Business & Location Settings'}
+              <h2 className="text-base font-semibold text-ink">
+                {isFarmer ? t('profile.farmerDetails') : t('profile.buyerDetails')}
               </h2>
-              <p className="text-xs text-slate-400">Update your profile details. All fields support partial updates.</p>
+              <p className="text-xs text-ink-muted">{t('profile.subtitle')}</p>
             </div>
           </div>
 
           {loading ? (
-            <div className="py-12 text-center text-slate-500 font-mono text-sm animate-pulse">
-              Loading profile data...
-            </div>
+            <PageSpinner message={t('common.loading')} />
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {isFarmer ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                      Primary Farm Name
-                    </label>
-                    <input
-                      type="text"
-                      {...register('farmName')}
-                      placeholder="Green Harvest Organics"
-                      className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                      Total Farm Size (Summary Acreage)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      {...register('farmSize')}
-                      placeholder="12.5"
-                      className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm font-mono"
-                    />
-                    {errors.farmSize && <p className="text-xs text-rose-400">{errors.farmSize.message}</p>}
-                    <p className="text-[10px] text-slate-500">Summary size. Individual farm sizes are managed under My Farms.</p>
-                  </div>
+                  <FormField label={t('profile.farmName')} htmlFor="farmName">
+                    <Input id="farmName" placeholder="Green Harvest Organics" {...register('farmName')} />
+                  </FormField>
+                  <FormField label={t('modals.farm.size')} htmlFor="farmSize" error={errors.farmSize?.message}>
+                    <Input id="farmSize" type="number" step="0.01" placeholder="12.5" {...register('farmSize')} />
+                  </FormField>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                      Business Name
-                    </label>
-                    <input
-                      type="text"
-                      {...register('businessName')}
-                      placeholder="Agri Produce Traders"
-                      className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                      Business Type
-                    </label>
-                    <select
-                      {...register('businessType')}
-                      className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-emerald-500 text-sm"
-                    >
+                  <FormField label={t('profile.businessName')} htmlFor="businessName">
+                    <Input id="businessName" placeholder="Agri Produce Traders" {...register('businessName')} />
+                  </FormField>
+                  <FormField label={t('profile.businessType')} htmlFor="businessType">
+                    <Select id="businessType" {...register('businessType')}>
                       <option value="RETAILER">Retailer</option>
                       <option value="WHOLESALER">Wholesaler</option>
                       <option value="RESTAURANT">Restaurant</option>
                       <option value="CONSUMER">Consumer</option>
-                    </select>
-                  </div>
+                    </Select>
+                  </FormField>
                 </div>
               )}
 
-              {/* Address Details */}
-              <div className="space-y-4 pt-2 border-t border-slate-800/60">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4" /> Location Details
+              {/* Location */}
+              <div className="space-y-4 pt-4 border-t border-line">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-brand-800 flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4" /> {t('common.location')}
                 </h3>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                    Street Address
-                  </label>
-                  <input
-                    type="text"
-                    {...register('address')}
-                    placeholder="Village Road, Sector 4"
-                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm"
-                  />
-                </div>
+                <FormField label={t('profile.address')} htmlFor="address">
+                  <Input id="address" placeholder="Village Road, Sector 4" {...register('address')} />
+                </FormField>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                      District
-                    </label>
-                    <input
-                      type="text"
-                      {...register('district')}
-                      placeholder="Nashik"
-                      className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                      State
-                    </label>
-                    <input
-                      type="text"
-                      {...register('state')}
-                      placeholder="Maharashtra"
-                      className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                      Pincode (6 Digits)
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      {...register('pincode')}
-                      placeholder="422001"
-                      className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm font-mono"
-                    />
-                    {errors.pincode && <p className="text-xs text-rose-400">{errors.pincode.message}</p>}
-                  </div>
+                  <FormField label={t('profile.district')} htmlFor="district">
+                    <Input id="district" placeholder="Nashik" {...register('district')} />
+                  </FormField>
+                  <FormField label={t('profile.state')} htmlFor="state">
+                    <Input id="state" placeholder="Maharashtra" {...register('state')} />
+                  </FormField>
+                  <FormField label={t('profile.pincode')} htmlFor="pincode" error={errors.pincode?.message} hint="6 digits">
+                    <Input id="pincode" maxLength={6} placeholder="422001" {...register('pincode')} />
+                  </FormField>
                 </div>
 
                 {isFarmer && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                        Latitude (-90 to 90)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.000001"
-                        {...register('latitude')}
-                        placeholder="19.9975"
-                        className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm font-mono"
-                      />
-                      {errors.latitude && <p className="text-xs text-rose-400">{errors.latitude.message}</p>}
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                        Longitude (-180 to 180)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.000001"
-                        {...register('longitude')}
-                        placeholder="73.7898"
-                        className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm font-mono"
-                      />
-                      {errors.longitude && <p className="text-xs text-rose-400">{errors.longitude.message}</p>}
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                    <FormField label="Latitude" htmlFor="latitude" error={errors.latitude?.message} hint="-90 to 90">
+                      <Input id="latitude" type="number" step="0.000001" placeholder="19.9975" {...register('latitude')} />
+                    </FormField>
+                    <FormField label="Longitude" htmlFor="longitude" error={errors.longitude?.message} hint="-180 to 180">
+                      <Input id="longitude" type="number" step="0.000001" placeholder="73.7898" {...register('longitude')} />
+                    </FormField>
                   </div>
                 )}
               </div>
 
-              <div className="flex justify-end pt-4 border-t border-slate-800">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl shadow-lg shadow-emerald-950/40 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 text-sm"
-                >
-                  {submitting ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" /> Save Profile Updates
-                    </>
-                  )}
-                </button>
+              <div className="flex justify-end pt-4 border-t border-line">
+                <Button type="submit" loading={submitting} icon={<Save className="w-4 h-4" />}>
+                  {t('profile.saveChanges')}
+                </Button>
               </div>
             </form>
           )}
-        </div>
-      </main>
-    </div>
+        </Card>
+      </div>
+    </AppLayout>
   );
 }

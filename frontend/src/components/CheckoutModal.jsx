@@ -5,15 +5,16 @@ import {
   ShieldCheck,
   MapPin,
   Sprout,
-  User,
-  ArrowRight,
   AlertCircle,
   Truck,
   CheckCircle2,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { createOrderApi } from '../services/api';
+import { formatCurrency, formatNumber } from '../utils/formatters';
 
 export default function CheckoutModal({ isOpen, onClose, offer, onSuccess }) {
+  const { t, i18n } = useTranslation();
   const [shippingAddress, setShippingAddress] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -55,25 +56,25 @@ export default function CheckoutModal({ isOpen, onClose, offer, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs fade-in">
+      <div className="relative w-full max-w-lg bg-surface border border-line rounded-2xl shadow-modal overflow-hidden flex flex-col max-h-[90vh] text-ink">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-950/60">
+        <div className="flex items-center justify-between p-5 border-b border-line bg-surface-muted/70">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
+            <div className="p-2.5 bg-brand-50 border border-brand-100 text-brand-800 rounded-xl">
               <ShoppingBag className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                Confirm Trade Checkout
+              <h3 className="text-lg font-bold text-ink flex items-center gap-2">
+                {t('modals.checkout.title')}
               </h3>
-              <p className="text-xs text-slate-400">Complete transaction on accepted trade terms</p>
+              <p className="text-xs text-ink-muted">{t('modals.checkout.subtitle')}</p>
             </div>
           </div>
           <button
             onClick={onClose}
             disabled={submitting}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 text-ink-subtle hover:text-ink-muted rounded-lg hover:bg-surface-sunken transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -82,51 +83,51 @@ export default function CheckoutModal({ isOpen, onClose, offer, onSuccess }) {
         {/* Scrollable Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
           {error && (
-            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
+            <div className="p-3.5 rounded-xl bg-danger-soft border border-danger-edge text-danger text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Agreed Produce Summary Card */}
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+          <div className="p-4 rounded-xl bg-surface-muted border border-line space-y-3">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                  Agreed Offer Terms
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-800 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200">
+                  {t('status.accepted')}
                 </span>
-                <h4 className="text-base font-bold text-white flex items-center gap-2">
-                  <Sprout className="w-4 h-4 text-emerald-400" />
+                <h4 className="text-base font-bold text-ink flex items-center gap-2 mt-1">
+                  <Sprout className="w-4 h-4 text-brand-800" />
                   {listing?.cropName || 'Produce Listing'}
                 </h4>
-                <p className="text-xs text-slate-400">
-                  Seller:{' '}
-                  <span className="text-slate-200 font-medium">
-                    {farmer?.name || listing?.farmerProfile?.farmName || 'Verified Farmer'}
+                <p className="text-xs text-ink-muted">
+                  {t('orders.card.farmer')}:{' '}
+                  <span className="text-ink font-medium">
+                    {farmer?.name || listing?.farmerProfile?.farmName || 'Farmer'}
                   </span>
                 </p>
               </div>
 
               <div className="text-right">
-                <span className="text-[10px] text-slate-400 font-mono">Agreed Unit Price</span>
-                <div className="text-base font-extrabold text-emerald-400 font-mono">
-                  ₹{agreedPrice.toLocaleString('en-IN')}{' '}
-                  <span className="text-xs font-normal text-slate-400">/ {listing?.unit || 'unit'}</span>
+                <span className="text-[11px] text-ink-muted">{t('modals.makeOffer.offerRate')}</span>
+                <div className="text-base font-bold text-brand-800">
+                  {formatCurrency(agreedPrice, i18n.language)}{' '}
+                  <span className="text-xs font-normal text-ink-muted">/ {listing?.unit || 'unit'}</span>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-900 text-xs">
+            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-line/80 text-xs">
               <div>
-                <span className="text-slate-500 block text-[11px]">Quantity</span>
-                <span className="text-slate-200 font-bold font-mono">
-                  {quantity.toLocaleString('en-IN')} {listing?.unit || 'units'}
+                <span className="text-ink-muted block text-[11px]">{t('common.quantity')}</span>
+                <span className="text-ink font-bold">
+                  {formatNumber(quantity, i18n.language)} {listing?.unit || 'units'}
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-slate-500 block text-[11px]">Order Total</span>
-                <span className="text-emerald-400 font-extrabold font-mono text-sm">
-                  ₹{totalAmount.toLocaleString('en-IN')}
+                <span className="text-ink-muted block text-[11px]">{t('orders.card.total')}</span>
+                <span className="text-brand-800 font-extrabold text-sm">
+                  {formatCurrency(totalAmount, i18n.language)}
                 </span>
               </div>
             </div>
@@ -134,58 +135,58 @@ export default function CheckoutModal({ isOpen, onClose, offer, onSuccess }) {
 
           {/* Shipping / Delivery Address Input */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-emerald-400" />
-              Delivery / Shipping Address <span className="text-rose-400">*</span>
+            <label className="block text-xs font-semibold text-ink flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-brand-800" />
+              {t('modals.checkout.shippingAddress')} <span className="text-danger">*</span>
             </label>
             <textarea
               required
               rows={3}
               value={shippingAddress}
               onChange={(e) => setShippingAddress(e.target.value)}
-              placeholder="Enter warehouse, shop, or delivery address with city and pincode..."
-              className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600 transition-colors resize-none"
+              placeholder={t('modals.checkout.shippingPlaceholder')}
+              className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 placeholder:text-ink-subtle transition-colors resize-none"
             />
-            <p className="text-[11px] text-slate-500 flex items-center gap-1 font-mono">
-              <Truck className="w-3 h-3 text-slate-400" /> Dispatch coordinate will be shared with the seller.
+            <p className="text-[11px] text-ink-muted flex items-center gap-1">
+              <Truck className="w-3.5 h-3.5 text-ink-subtle" /> {t('modals.checkout.paymentNotice')}
             </p>
           </div>
 
           {/* Security & Guarantee Trust Banner */}
-          <div className="p-3.5 rounded-xl bg-blue-500/5 border border-blue-500/20 text-xs text-blue-300/90 flex items-start gap-2.5">
-            <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+          <div className="p-3.5 rounded-xl bg-info-soft border border-blue-200 text-xs text-blue-900 flex items-start gap-2.5">
+            <ShieldCheck className="w-4 h-4 text-info shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-blue-200">Direct Farmer Settlement Protection</p>
-              <p className="text-[11px] text-blue-300/80 leading-relaxed mt-0.5">
-                Stock is decremented atomically upon confirmation. The accepted price is locked and guaranteed against market fluctuation.
+              <p className="font-semibold text-blue-900">{t('footer.verifiedSettlement')}</p>
+              <p className="text-[11px] text-info leading-relaxed mt-0.5">
+                {t('modals.checkout.paymentNotice')}
               </p>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-line">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
+              className="px-4 py-2.5 bg-surface hover:bg-surface-muted text-ink rounded-lg border border-line text-sm font-medium transition-colors cursor-pointer disabled:opacity-50"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-semibold shadow-lg shadow-emerald-950/50 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {submitting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                  <span>Processing Order...</span>
+                  <span>{t('common.submitting')}</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Confirm &amp; Place Order (₹{totalAmount.toLocaleString('en-IN')})</span>
+                  <span>{t('modals.checkout.confirmPay')} ({formatCurrency(totalAmount, i18n.language)})</span>
                 </>
               )}
             </button>
@@ -195,3 +196,5 @@ export default function CheckoutModal({ isOpen, onClose, offer, onSuccess }) {
     </div>
   );
 }
+
+
