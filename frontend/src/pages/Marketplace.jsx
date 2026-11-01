@@ -193,7 +193,7 @@ export default function Marketplace() {
           {/* Expandable advanced filters */}
           {showFilters && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-3 border-t border-line fade-in">
-              <FilterField label={t('common.filter', 'Category')}>
+              <FilterField label={t('modals.cropListing.category', 'Harvest Category')}>
                 <select
                   value={selectedCategory}
                   onChange={(e) => { setSelectedCategory(e.target.value); setPage(1); }}

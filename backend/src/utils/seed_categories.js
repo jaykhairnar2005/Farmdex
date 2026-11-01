@@ -39,7 +39,13 @@ export const standardIndianCategories = [
  * Non-destructive, repeatable seed utility for Indian agricultural categories.
  * Uses unique category name to create or preserve existing categories.
  */
-export async function seedCategories() {
+export async function seedCategories({ force = false, silent = false } = {}) {
+  const existingCount = await prisma.category.count();
+  if (!force && existingCount >= standardIndianCategories.length) {
+    if (!silent) console.log(`🌾 [Categories] ${existingCount} agricultural categories verified in database.`);
+    return;
+  }
+
   console.log('🌱 Starting idempotent FarmDex category seed...');
   let createdCount = 0;
   let preservedCount = 0;

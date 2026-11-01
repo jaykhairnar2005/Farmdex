@@ -47,6 +47,12 @@ server.listen(PORT, async () => {
   const dbStatus = await checkDatabaseConnection();
   if (dbStatus.connected) {
     console.log(`✅ [Database] PostgreSQL connected successfully via Prisma.`);
+    try {
+      const { seedCategories } = await import('./utils/seed_categories.js');
+      await seedCategories();
+    } catch (seedErr) {
+      console.warn(`⚠️ [Database] Category seed check warning:`, seedErr.message);
+    }
   } else {
     console.warn(`⚠️ [Database] Connection check failed on startup: ${dbStatus.message}`);
   }

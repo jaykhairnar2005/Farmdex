@@ -441,6 +441,7 @@
       "subtitle": "Provide accurate harvest quality specs and mandi pricing",
       "cropName": "Crop Name",
       "category": "Harvest Category",
+      "selectCategory": "Select harvest category...",
       "variety": "Variety / Hybrid",
       "quantity": "Available Batch Quantity",
       "unit": "Unit of Measurement",

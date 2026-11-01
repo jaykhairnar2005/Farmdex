@@ -53,3 +53,5 @@ env/
 # Prisma
 backend/prisma/*.db
 backend/prisma/*.db-journal
+
+farmdex_backup.dump

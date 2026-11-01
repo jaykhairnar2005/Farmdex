@@ -67,8 +67,12 @@ export default function CropListingModal({ isOpen, onClose, onSave, listingToEdi
             fetchCategoriesApi(),
             getFarmsApi(),
           ]);
-          if (catRes.success && Array.isArray(catRes.data)) {
+          if (catRes?.success && Array.isArray(catRes.data)) {
             setCategories(catRes.data);
+          } else if (Array.isArray(catRes?.data)) {
+            setCategories(catRes.data);
+          } else if (Array.isArray(catRes)) {
+            setCategories(catRes);
           }
           if (farmRes.success && Array.isArray(farmRes.data)) {
             setFarms(farmRes.data);
@@ -252,14 +256,15 @@ export default function CropListingModal({ isOpen, onClose, onSave, listingToEdi
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-ink">
-                {t('modals.cropListing.category')} *
+              <label htmlFor="crop-category-select" className="block text-xs font-semibold uppercase tracking-wider text-ink">
+                {t('modals.cropListing.category', 'Harvest Category')} *
               </label>
               <select
+                id="crop-category-select"
                 {...register('categoryId')}
                 className="w-full px-3.5 py-2.5 bg-surface border border-line rounded-lg text-ink focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm"
               >
-                <option value="">{t('common.selectLanguage')}...</option>
+                <option value="">{t('modals.cropListing.selectCategory', 'Select harvest category...')}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}

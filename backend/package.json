@@ -45,5 +45,8 @@
   },
   "overrides": {
     "deepmerge-ts": "^8.0.2"
+  },
+  "prisma": {
+    "seed": "node src/utils/seed_categories.js"
   }
 }
