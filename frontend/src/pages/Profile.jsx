@@ -112,26 +112,26 @@ export default function Profile() {
         />
 
         {/* Identity card */}
-        <Card className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <Card className="p-6 sm:p-7 rounded-2xl border border-line shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 card-lift">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-brand-100 text-brand-800 flex items-center justify-center font-semibold text-xl border border-brand-200">
+            <div className="w-16 h-16 rounded-2xl bg-brand-800 text-white flex items-center justify-center font-bold text-2xl shadow-md font-heading">
               {user?.name?.charAt(0)?.toUpperCase() || 'U'}
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-ink flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-extrabold text-ink flex items-center gap-2.5 font-heading">
                 {user?.name}
-                <Badge colour="brand">{user?.role === 'FARMER' ? t('auth.roleFarmer') : t('auth.roleBuyer')}</Badge>
+                <Badge colour={user?.role === 'FARMER' ? 'lime' : 'brand'}>{user?.role === 'FARMER' ? t('auth.roleFarmer') : t('auth.roleBuyer')}</Badge>
               </h1>
-              <p className="text-sm text-ink-muted mt-0.5">{user?.email}</p>
+              <p className="text-xs sm:text-sm text-ink-muted mt-0.5">{user?.email}</p>
             </div>
           </div>
 
           {isFarmer && (
-            <div className="flex items-center gap-2.5 bg-brand-50 border border-brand-100 px-3.5 py-2.5 rounded-lg text-xs">
-              <Shield className="w-4 h-4 text-brand-800" />
+            <div className="flex items-center gap-2.5 bg-brand-50 dark:bg-brand-900/40 border border-brand-200/60 dark:border-brand-800 px-4 py-2.5 rounded-xl text-xs">
+              <Shield className="w-4 h-4 text-brand-800 dark:text-lime-400" />
               <div>
-                <span className="text-ink-muted block text-[11px]">{t('admin.userTable.verification')}</span>
-                <span className="font-semibold text-brand-800">{farmerP?.verificationStatus || 'VERIFIED'}</span>
+                <span className="text-ink-subtle block text-[10px] uppercase font-semibold">{t('admin.userTable.verification')}</span>
+                <span className="font-extrabold text-brand-800 dark:text-lime-400">{farmerP?.verificationStatus || 'VERIFIED'}</span>
               </div>
             </div>
           )}
@@ -142,13 +142,13 @@ export default function Profile() {
         )}
 
         {/* Edit form */}
-        <Card className="p-6 sm:p-8 space-y-6">
+        <Card className="p-6 sm:p-8 space-y-6 rounded-2xl border border-line shadow-card">
           <div className="flex items-center gap-3 border-b border-line pb-4">
-            <div className="w-9 h-9 rounded-lg bg-brand-50 text-brand-800 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/40 text-brand-800 dark:text-lime-400 border border-brand-200/50 flex items-center justify-center">
               {isFarmer ? <Tractor className="w-5 h-5" /> : <ShoppingBag className="w-5 h-5" />}
             </div>
             <div>
-              <h2 className="text-base font-semibold text-ink">
+              <h2 className="text-base font-bold text-ink font-heading">
                 {isFarmer ? t('profile.farmerDetails') : t('profile.buyerDetails')}
               </h2>
               <p className="text-xs text-ink-muted">{t('profile.subtitle')}</p>
@@ -186,7 +186,7 @@ export default function Profile() {
 
               {/* Location */}
               <div className="space-y-4 pt-4 border-t border-line">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-brand-800 flex items-center gap-1.5">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-brand-800 dark:text-lime-400 flex items-center gap-1.5 font-heading">
                   <MapPin className="w-4 h-4" /> {t('common.location')}
                 </h3>
 
@@ -219,7 +219,7 @@ export default function Profile() {
               </div>
 
               <div className="flex justify-end pt-4 border-t border-line">
-                <Button type="submit" loading={submitting} icon={<Save className="w-4 h-4" />}>
+                <Button type="submit" variant="lime" loading={submitting} icon={<Save className="w-4 h-4" />}>
                   {t('profile.saveChanges')}
                 </Button>
               </div>

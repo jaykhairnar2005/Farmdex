@@ -43,8 +43,10 @@ export default function Navbar() {
   const navLinkClass = (path, extraPaths = []) => {
     const active = isActive(path) || extraPaths.some((p) => location.pathname.startsWith(p));
     return [
-      'relative inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors',
-      active ? 'text-brand-800 bg-brand-50' : 'text-ink-muted hover:text-ink hover:bg-surface-muted',
+      'relative inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200',
+      active
+        ? 'text-brand-900 dark:text-lime-400 bg-brand-100/70 dark:bg-brand-950/80 font-semibold shadow-xs'
+        : 'text-ink-muted hover:text-ink hover:bg-surface-muted/80',
     ].join(' ');
   };
 
@@ -110,27 +112,33 @@ export default function Navbar() {
   );
 
   return (
-    <header className="bg-surface/95 backdrop-blur-sm border-b border-line sticky top-0 z-40">
+    <header className="glass-panel border-b border-line/80 sticky top-0 z-40 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 sm:h-18">
           {/* Brand */}
-          <Link to="/" className="flex items-center gap-2.5 shrink-0">
-            <div className="w-9 h-9 bg-brand-800 rounded-lg flex items-center justify-center ring-1 ring-brand-900/20">
-              <Sprout className="w-5 h-5 text-white" />
+          <Link to="/" className="flex items-center gap-3 shrink-0 group">
+            <div className="relative w-10 h-10 bg-gradient-to-br from-brand-700 to-brand-900 rounded-xl flex items-center justify-center shadow-md shadow-brand-900/15 group-hover:scale-105 transition-transform duration-200">
+              <Sprout className="w-5.5 h-5.5 text-lime-400 group-hover:rotate-12 transition-transform duration-300" />
+              <span className="w-2 h-2 rounded-full bg-lime-400 absolute -top-0.5 -right-0.5 ring-2 ring-surface animate-pulse" />
             </div>
-            <div className="hidden sm:flex items-center gap-1.5">
-              <span className="text-lg font-semibold text-ink tracking-tight">{t('nav.brand', 'FarmDex')}</span>
-              <span className="text-[10px] text-brand-700 font-semibold bg-brand-50 px-1.5 py-0.5 rounded border border-brand-100">
-                {t('nav.beta', 'BETA')}
-              </span>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="text-xl font-bold tracking-tight text-ink group-hover:text-brand-800 transition-colors">
+                  Farm<span className="text-lime-600 dark:text-lime-400">Dex</span>
+                </span>
+                <span className="text-[10px] tracking-wider uppercase font-bold text-brand-800 dark:text-brand-300 bg-brand-100/80 dark:bg-brand-950 px-1.5 py-0.5 rounded-full border border-brand-200 dark:border-brand-800/80">
+                  {t('nav.beta', 'PRO')}
+                </span>
+              </div>
+              <span className="hidden sm:block text-[10px] text-ink-subtle font-medium -mt-0.5">Agri Commodity Exchange</span>
             </div>
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-1">{links}</nav>
+          <nav className="hidden lg:flex items-center gap-1.5">{links}</nav>
 
           {/* Right cluster: Language Selector, Theme Toggle, Notifications, Profile / Auth */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <LanguageSelector />
             <ThemeToggle />
 
@@ -142,31 +150,38 @@ export default function Navbar() {
                 <div className="relative" ref={profileRef}>
                   <button
                     onClick={() => setProfileOpen((o) => !o)}
-                    className="flex items-center gap-2 pl-1 pr-2 py-1 rounded-lg hover:bg-surface-muted transition-colors cursor-pointer"
+                    className="flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-xl border border-transparent hover:border-line hover:bg-surface-muted/80 transition-all cursor-pointer"
                     aria-label={t('nav.profileSettings', 'Profile & settings')}
                   >
-                    <div className="w-7 h-7 rounded-full bg-brand-100 text-brand-800 flex items-center justify-center text-xs font-semibold">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-600 to-brand-800 text-white flex items-center justify-center text-xs font-bold shadow-xs">
                       {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                     <span className="hidden md:block text-left leading-tight">
-                      <span className="block text-sm font-medium text-ink">{user?.name}</span>
-                      <span className="block text-[10px] text-ink-subtle capitalize">{user?.role?.toLowerCase()}</span>
+                      <span className="block text-sm font-semibold text-ink truncate max-w-[120px]">{user?.name}</span>
+                      <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-surface-muted text-brand-800 dark:text-brand-300 border border-line">
+                        {user?.role}
+                      </span>
                     </span>
                   </button>
 
                   {profileOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-surface border border-line rounded-xl shadow-popover overflow-hidden scale-in">
-                      <div className="px-4 py-3 border-b border-line">
-                        <p className="text-sm font-medium text-ink truncate">{user?.name}</p>
+                    <div className="absolute right-0 mt-2 w-60 bg-surface border border-line rounded-2xl shadow-popover overflow-hidden scale-in z-50">
+                      <div className="px-4 py-3.5 border-b border-line bg-surface-muted/30">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-bold text-ink truncate">{user?.name}</p>
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-50 text-brand-800 border border-brand-200">
+                            {user?.role}
+                          </span>
+                        </div>
                         <p className="text-xs text-ink-subtle truncate">{user?.email}</p>
                       </div>
-                      <div className="py-1.5">
-                        <Link to="/profile" className="flex items-center gap-2.5 px-4 py-2 text-sm text-ink-muted hover:bg-surface-muted hover:text-ink transition-colors">
-                          <User className="w-4 h-4" /> {t('nav.profileSettings', 'Profile & settings')}
+                      <div className="p-1.5 space-y-0.5">
+                        <Link to="/profile" className="flex items-center gap-2.5 px-3 py-2 text-sm text-ink-muted hover:bg-surface-muted hover:text-ink rounded-lg transition-colors">
+                          <User className="w-4 h-4 text-brand-700" /> {t('nav.profileSettings', 'Profile & settings')}
                         </Link>
                         <button
                           onClick={logout}
-                          className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-danger hover:bg-danger-soft transition-colors cursor-pointer text-left"
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-danger hover:bg-danger-soft rounded-lg transition-colors cursor-pointer text-left"
                         >
                           <LogOut className="w-4 h-4" /> {t('nav.signOut', 'Sign out')}
                         </button>
@@ -189,13 +204,13 @@ export default function Navbar() {
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-sm font-medium text-ink-muted hover:text-ink transition-colors"
+                  className="px-3.5 py-2 text-sm font-semibold text-ink-muted hover:text-ink hover:bg-surface-muted/80 rounded-xl transition-all"
                 >
                   {t('nav.signIn', 'Sign in')}
                 </Link>
                 <Link
                   to="/register"
-                  className="inline-flex items-center h-9 px-4 bg-brand-800 hover:bg-brand-900 text-white text-sm font-medium rounded-lg transition-colors shadow-card"
+                  className="inline-flex items-center h-10 px-4.5 bg-brand-800 hover:bg-brand-900 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-card-hover active:scale-[0.98]"
                 >
                   {t('nav.getStarted', 'Get started')}
                 </Link>

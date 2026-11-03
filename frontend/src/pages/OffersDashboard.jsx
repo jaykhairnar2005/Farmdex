@@ -133,25 +133,27 @@ export default function OffersDashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <StatCard label={t('offers.tabs.all', 'Total offers')} value={offers.length} icon={<Handshake />} />
-          <StatCard label={t('offers.tabs.pending', 'Pending')} value={pending} icon={<Clock />} tone="warning" />
-          <StatCard label={t('offers.tabs.countered', 'Countered')} value={countered} icon={<RefreshCw />} tone="info" />
-          <StatCard label={t('offers.tabs.accepted', 'Accepted')} value={accepted} icon={<Check />} tone="success" />
+          <StatCard label={t('offers.tabs.all', 'Total Offers')} value={offers.length} icon={<Handshake />} />
+          <StatCard label={t('offers.tabs.pending', 'Pending Offers')} value={pending} icon={<Clock />} tone="warning" />
+          <StatCard label={t('offers.tabs.countered', 'Counter Proposals')} value={countered} icon={<RefreshCw />} tone="lime" />
+          <StatCard label={t('offers.tabs.accepted', 'Agreed Deals')} value={accepted} icon={<Check />} tone="success" />
         </div>
 
         {alert.text && (
           <InlineAlert type={alert.type} message={alert.text} onDismiss={() => setAlert({ type: '', text: '' })} />
         )}
 
-        <FilterPills items={filters} value={statusFilter} onChange={setStatusFilter} />
+        <div className="bg-surface p-2 rounded-2xl border border-line shadow-card inline-block">
+          <FilterPills items={filters} value={statusFilter} onChange={setStatusFilter} />
+        </div>
 
         {/* Offers list */}
         {loading ? (
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i} className="p-5 space-y-4">
+              <Card key={i} className="p-6 space-y-4 rounded-2xl border border-line">
                 <div className="flex items-center gap-3.5">
-                  <SkeletonBlock className="w-12 h-12 rounded-lg" />
+                  <SkeletonBlock className="w-12 h-12 rounded-xl" />
                   <div className="space-y-2 flex-1">
                     <SkeletonBlock className="h-4 w-1/3" />
                     <SkeletonBlock className="h-3 w-1/4" />
@@ -183,11 +185,11 @@ export default function OffersDashboard() {
               const busy = actionLoadingId === offer.id;
 
               return (
-                <Card key={offer.id} className="p-5 sm:p-6 space-y-4 hover:shadow-card-hover transition-shadow">
+                <Card key={offer.id} className="p-5 sm:p-6 space-y-5 rounded-2xl border border-line hover:shadow-card-hover transition-all shadow-card card-lift">
                   {/* Top: produce + status */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-line">
                     <div className="flex items-center gap-3.5">
-                      <div className="w-12 h-12 rounded-lg bg-surface-muted border border-line overflow-hidden shrink-0">
+                      <div className="w-14 h-14 rounded-xl bg-surface-muted border border-line overflow-hidden shrink-0 shadow-sm">
                         <img
                           src={getCropImageUrl(listing?.cropName, listing?.category?.name, primaryImage)}
                           alt={listing?.cropName || 'Produce'}
@@ -198,18 +200,18 @@ export default function OffersDashboard() {
                       <div className="min-w-0">
                         <Link
                           to={`/crops/${listing?.id}`}
-                          className="font-semibold text-ink hover:text-brand-800 transition-colors flex items-center gap-1.5"
+                          className="font-bold text-ink hover:text-brand-800 dark:hover:text-lime-400 transition-colors flex items-center gap-1.5 font-heading text-base"
                         >
                           {listing?.cropName}
                           <Eye className="w-3.5 h-3.5 text-ink-subtle" />
                         </Link>
                         <div className="flex items-center gap-2 text-xs text-ink-muted mt-0.5">
-                          <span>{listing?.category?.name || 'Produce'}</span>
+                          <span className="font-medium">{listing?.category?.name || 'Produce'}</span>
                           {listing?.location && (
                             <>
                               <span className="text-ink-subtle">·</span>
-                              <span className="flex items-center gap-0.5">
-                                <MapPin className="w-3 h-3 text-brand-700" />{listing.location}
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-brand-700 dark:text-lime-400" />{listing.location}
                               </span>
                             </>
                           )}
@@ -220,36 +222,38 @@ export default function OffersDashboard() {
                   </div>
 
                   {/* Pricing grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-lg bg-surface-muted/60 border border-line text-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-xl bg-surface-muted/60 border border-line text-xs">
                     <div>
-                      <span className="text-ink-subtle block">{t('offers.card.offeredRate', 'Offered Rate')}</span>
-                      <div className="text-base font-semibold text-brand-800">
+                      <span className="text-[11px] uppercase tracking-wider text-ink-subtle font-semibold block">{t('offers.card.offeredRate', 'Offered Rate')}</span>
+                      <div className="text-base sm:text-lg font-extrabold text-brand-800 dark:text-lime-400 font-mono mt-0.5">
                         {formatCurrency(offer.offeredPrice)}
-                        <span className="text-xs text-ink-subtle font-normal"> / {listing?.unit}</span>
+                        <span className="text-xs text-ink-subtle font-medium"> / {listing?.unit}</span>
                       </div>
                       {askingPrice > 0 && (
-                        <span className={`text-[10px] font-semibold flex items-center gap-0.5 ${diffPct < 0 ? 'text-warning' : 'text-success'}`}>
+                        <span className={`text-[11px] font-bold flex items-center gap-0.5 mt-0.5 ${diffPct < 0 ? 'text-warning' : 'text-success'}`}>
                           {diffPct < 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
-                          {diffPct > 0 ? `+${diffPct.toFixed(1)}%` : `${diffPct.toFixed(1)}%`}
+                          {diffPct > 0 ? `+${diffPct.toFixed(1)}%` : `${diffPct.toFixed(1)}%`} vs Ask
                         </span>
                       )}
                     </div>
                     <div>
-                      <span className="text-ink-subtle block">{t('offers.card.quantity', 'Quantity')}</span>
-                      <div className="text-base font-semibold text-ink">
+                      <span className="text-[11px] uppercase tracking-wider text-ink-subtle font-semibold block">{t('offers.card.quantity', 'Quantity')}</span>
+                      <div className="text-base sm:text-lg font-bold text-ink mt-0.5">
                         {formatNumber(offer.quantity)} {listing?.unit}
                       </div>
                     </div>
                     <div>
-                      <span className="text-ink-subtle block">{t('offers.card.totalValue', 'Total Estimated Settlement')}</span>
-                      <div className="text-base font-semibold text-brand-800">{formatCurrency(totalVal)}</div>
+                      <span className="text-[11px] uppercase tracking-wider text-ink-subtle font-semibold block">{t('offers.card.totalValue', 'Estimated Total')}</span>
+                      <div className="text-base sm:text-lg font-extrabold text-brand-800 dark:text-lime-400 font-mono mt-0.5">
+                        {formatCurrency(totalVal)}
+                      </div>
                     </div>
                     <div>
-                      <span className="text-ink-subtle block">{isFarmer ? t('offers.card.buyer', 'Buyer') : t('offers.card.farmer', 'Farmer')}</span>
-                      <div className="font-semibold text-ink truncate">
+                      <span className="text-[11px] uppercase tracking-wider text-ink-subtle font-semibold block">{isFarmer ? t('offers.card.buyer', 'Buyer') : t('offers.card.farmer', 'Farmer')}</span>
+                      <div className="font-bold text-ink truncate mt-0.5">
                         {isFarmer ? offer.buyer?.name || 'Buyer' : listing?.farmerProfile?.user?.name || 'Producer'}
                       </div>
-                      <span className="text-[11px] text-ink-subtle truncate block">
+                      <span className="text-[11px] text-ink-muted truncate block">
                         {isFarmer ? offer.buyer?.phone || offer.buyer?.email : listing?.farmerProfile?.district || ''}
                       </span>
                     </div>
@@ -257,25 +261,25 @@ export default function OffersDashboard() {
 
                   {/* Negotiation note */}
                   {offer.message && (
-                    <div className="p-3.5 rounded-lg bg-surface-muted border border-line text-xs text-ink-muted">
-                      <div className="flex items-center gap-1.5 text-ink-subtle font-semibold text-[11px] mb-1">
-                        <MessageSquare className="w-3.5 h-3.5 text-brand-700" />
+                    <div className="p-4 rounded-xl bg-surface-muted/90 border border-line text-xs text-ink-muted">
+                      <div className="flex items-center gap-1.5 text-brand-800 dark:text-lime-400 font-bold text-xs mb-1">
+                        <MessageSquare className="w-3.5 h-3.5" />
                         {t('offers.card.notes', 'Negotiation Note')}
                       </div>
-                      <p className="whitespace-pre-wrap leading-relaxed text-ink">{offer.message}</p>
+                      <p className="whitespace-pre-wrap leading-relaxed text-ink font-medium">{offer.message}</p>
                     </div>
                   )}
 
                   {offer.expiresAt && (
-                    <div className="flex items-center gap-1.5 text-[11px] text-ink-subtle">
-                      <Clock className="w-3 h-3" />
+                    <div className="flex items-center gap-1.5 text-[11px] text-ink-subtle font-medium">
+                      <Clock className="w-3.5 h-3.5" />
                       {t('cropDetail.shelfLife', 'Valid until')} {formatDate(offer.expiresAt)}
                     </div>
                   )}
 
                   {/* Action bar */}
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-line">
-                    <span className="text-[11px] text-ink-subtle">
+                    <span className="text-[11px] text-ink-subtle font-medium">
                       {formatDateTime(offer.createdAt)}
                     </span>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -287,7 +291,7 @@ export default function OffersDashboard() {
                           <Button size="sm" variant="secondary" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={() => setActiveModalOffer(offer)} loading={busy}>
                             {t('offers.card.actions.counter', 'Counter Offer')}
                           </Button>
-                          <Button size="sm" icon={<Check className="w-3.5 h-3.5" />} onClick={() => handleAccept(offer.id)} loading={busy}>
+                          <Button size="sm" variant="lime" icon={<Check className="w-3.5 h-3.5" />} onClick={() => handleAccept(offer.id)} loading={busy}>
                             {t('offers.card.actions.accept', 'Accept Offer')}
                           </Button>
                         </>
@@ -301,7 +305,7 @@ export default function OffersDashboard() {
                           <Button size="sm" variant="secondary" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={() => setActiveModalOffer(offer)} loading={busy}>
                             {t('offers.card.actions.counter', 'Counter Offer')}
                           </Button>
-                          <Button size="sm" icon={<Check className="w-3.5 h-3.5" />} onClick={() => handleAccept(offer.id)} loading={busy}>
+                          <Button size="sm" variant="lime" icon={<Check className="w-3.5 h-3.5" />} onClick={() => handleAccept(offer.id)} loading={busy}>
                             {t('offers.card.actions.accept', 'Accept Offer')}
                           </Button>
                         </>
@@ -321,7 +325,7 @@ export default function OffersDashboard() {
                                 {t('orders.card.actions.viewReceipt', 'Official Receipt')}
                               </Button>
                             ) : (
-                              <Button size="sm" icon={<ShoppingBag className="w-3.5 h-3.5" />} onClick={() => setCheckoutOffer(offer)}>
+                              <Button size="sm" variant="lime" icon={<ShoppingBag className="w-3.5 h-3.5" />} onClick={() => setCheckoutOffer(offer)}>
                                 {t('offers.card.actions.checkout', 'Proceed to Settlement & Pay')}
                               </Button>
                             )
@@ -330,8 +334,8 @@ export default function OffersDashboard() {
                               {t('orders.card.actions.viewReceipt', 'Official Receipt')}
                             </Button>
                           ) : (
-                            <span className="text-[11px] text-warning font-medium flex items-center gap-1">
-                              <Clock className="w-3 h-3" /> {t('common.loading', 'Awaiting buyer checkout')}
+                            <span className="text-xs text-warning font-semibold flex items-center gap-1.5 bg-warning-soft px-3 py-1 rounded-lg">
+                              <Clock className="w-3.5 h-3.5" /> {t('common.loading', 'Awaiting buyer checkout')}
                             </span>
                           )}
                         </>
@@ -340,7 +344,7 @@ export default function OffersDashboard() {
                       <Tooltip label={t('common.view', 'View listing')}>
                         <Link
                           to={`/crops/${listing?.id}`}
-                          className="w-7 h-7 flex items-center justify-center text-ink-subtle hover:text-brand-800 hover:bg-brand-50 rounded-lg border border-line transition-colors"
+                          className="w-8 h-8 flex items-center justify-center text-ink-subtle hover:text-brand-800 hover:bg-brand-50 rounded-xl border border-line transition-colors"
                         >
                           <Eye className="w-4 h-4" />
                         </Link>

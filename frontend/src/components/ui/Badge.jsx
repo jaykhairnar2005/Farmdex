@@ -9,7 +9,8 @@ import React from 'react';
 
 const colourMap = {
   default: 'bg-surface-sunken text-ink-muted border-line',
-  brand:   'bg-brand-50 text-brand-800 border-brand-200',
+  brand:   'bg-brand-50 text-brand-800 border-brand-200 dark:bg-brand-950/50 dark:text-brand-300 dark:border-brand-800/60',
+  lime:    'bg-lime-50 text-lime-800 border-lime-300/80 dark:bg-lime-950/50 dark:text-lime-300 dark:border-lime-700/60',
   success: 'bg-success-soft text-success border-success-edge',
   warning: 'bg-warning-soft text-warning border-warning-edge',
   danger:  'bg-danger-soft text-danger border-danger-edge',
@@ -17,12 +18,12 @@ const colourMap = {
   purple:  'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60',
 };
 
-export function Badge({ colour = 'default', size = 'md', icon, children, className = '' }) {
-  const padding = size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-xs';
+export function Badge({ colour = 'default', size = 'md', dot = false, icon, children, className = '' }) {
+  const padding = size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs';
   return (
     <span
       className={[
-        'inline-flex items-center gap-1 font-medium rounded-full border whitespace-nowrap',
+        'inline-flex items-center gap-1.5 font-medium rounded-full border whitespace-nowrap shadow-[0_1px_2px_rgba(0,0,0,0.02)]',
         padding,
         colourMap[colour] ?? colourMap.default,
         className,
@@ -30,7 +31,8 @@ export function Badge({ colour = 'default', size = 'md', icon, children, classNa
         .filter(Boolean)
         .join(' ')}
     >
-      {icon && <span className="shrink-0 [&>svg]:w-3 [&>svg]:h-3">{icon}</span>}
+      {dot && <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0 animate-pulse" />}
+      {icon && <span className="shrink-0 [&>svg]:w-3.5 [&>svg]:h-3.5">{icon}</span>}
       {children}
     </span>
   );

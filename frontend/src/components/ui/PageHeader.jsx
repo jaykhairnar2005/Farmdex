@@ -29,22 +29,23 @@ export function PageHeader({ eyebrow, title, subtitle, icon, breadcrumbs, action
       )}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-3.5 min-w-0">
+        <div className="flex items-start gap-4 min-w-0">
           {icon && (
-            <span className="w-10 h-10 shrink-0 rounded-lg bg-brand-50 text-brand-800 border border-brand-100 flex items-center justify-center [&>svg]:w-5 [&>svg]:h-5">
+            <span className="w-12 h-12 shrink-0 rounded-2xl bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-950 dark:to-brand-900 text-brand-800 dark:text-brand-300 border border-brand-200 dark:border-brand-800/60 flex items-center justify-center [&>svg]:w-6 [&>svg]:h-6 shadow-sm">
               {icon}
             </span>
           )}
           <div className="min-w-0">
             {eyebrow && (
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-brand-700 mb-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-lime-100/80 dark:bg-lime-950/60 border border-lime-300/60 dark:border-lime-700/60 text-[11px] font-semibold tracking-wider text-lime-800 dark:text-lime-300 mb-1.5 uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-lime-600 dark:bg-lime-400" />
                 {eyebrow}
-              </p>
+              </div>
             )}
-            <h1 className="text-2xl sm:text-3xl font-semibold text-ink tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-3xl font-bold text-ink tracking-tight leading-tight">
               {title}
             </h1>
-            {subtitle && <p className="text-sm text-ink-muted mt-1">{subtitle}</p>}
+            {subtitle && <p className="text-sm text-ink-muted mt-1 leading-relaxed max-w-3xl">{subtitle}</p>}
           </div>
         </div>
 

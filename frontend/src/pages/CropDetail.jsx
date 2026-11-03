@@ -116,52 +116,69 @@ export default function CropDetail() {
     <div className="min-h-screen bg-canvas flex flex-col">
       <Navbar />
 
-      <main className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 flex-1 fade-in">
-        {/* Breadcrumb */}
+      <main className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8 flex-1 fade-in">
+        {/* Breadcrumb & Lot Bar */}
         <nav aria-label="Breadcrumb" className="flex items-center justify-between">
-          <Link to="/marketplace" className="text-sm text-ink-muted hover:text-ink flex items-center gap-1.5 transition-colors font-medium">
-            <ArrowLeft className="w-4 h-4" /> {t('cropDetail.back', 'Back to marketplace')}
+          <Link to="/marketplace" className="text-xs sm:text-sm text-ink-muted hover:text-brand-800 dark:hover:text-lime-400 flex items-center gap-1.5 transition-colors font-semibold">
+            <ArrowLeft className="w-4 h-4" /> {t('cropDetail.back', 'Back to Marketplace')}
           </Link>
-          {isOwner && (
-            <Link to="/my-listings" className="text-sm text-brand-800 hover:text-brand-900 font-medium flex items-center gap-1">
-              <Edit className="w-3.5 h-3.5" /> {t('cropDetail.editListing', 'Edit Produce Batch')}
-            </Link>
-          )}
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline text-xs text-ink-subtle font-mono">Lot #{listing.id.slice(0, 8)}</span>
+            {isOwner && (
+              <Link to="/my-listings" className="text-xs sm:text-sm text-brand-800 dark:text-lime-400 font-bold flex items-center gap-1.5 hover:underline">
+                <Edit className="w-3.5 h-3.5" /> {t('cropDetail.editListing', 'Edit Produce Batch')}
+              </Link>
+            )}
+          </div>
         </nav>
 
         {/* Main two-column */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           {/* Gallery */}
-          <div className="space-y-3">
-            <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-surface-muted border border-line shadow-card">
+          <div className="space-y-4">
+            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-surface-muted border border-line shadow-card">
               <img
                 src={primaryImg}
                 alt={listing.cropName}
                 onError={(e) => handleImageFallback(e, listing.cropName, listing.category?.name)}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
               />
-              {listing.isOrganic && (
-                <span className="absolute top-4 left-4">
-                  <Badge colour="brand" icon={<Leaf className="w-3.5 h-3.5" />}>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+
+              {/* Badges on image */}
+              <div className="absolute top-4 left-4 flex items-center gap-2">
+                {listing.isOrganic && (
+                  <Badge colour="lime" icon={<Leaf className="w-3.5 h-3.5" />}>
                     {t('cropDetail.organicCertified', 'Certified Organic')}
                   </Badge>
-                </span>
-              )}
+                )}
+                <Badge colour="brand">
+                  {listing.category?.name || 'Agri Commodity'}
+                </Badge>
+              </div>
+
               {listing.quality && (
-                <span className="absolute top-4 right-4 text-xs font-semibold px-2.5 py-1 rounded-md bg-surface/95 text-ink border border-line backdrop-blur-sm">
+                <span className="absolute top-4 right-4 text-xs font-bold px-3 py-1 rounded-lg bg-surface/95 text-ink border border-line backdrop-blur-md shadow-md">
                   {t('marketplace.grade', { grade: listing.quality, defaultValue: `Grade ${listing.quality}` })}
                 </span>
+              )}
+
+              {listing.location && (
+                <div className="absolute bottom-3 left-4 text-xs text-white font-medium flex items-center gap-1.5 bg-black/50 px-2.5 py-1 rounded-lg backdrop-blur-md">
+                  <MapPin className="w-3.5 h-3.5 text-lime-400" />
+                  <span>{listing.location}</span>
+                </div>
               )}
             </div>
 
             {images.length > 1 && (
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+              <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar pb-1">
                 {images.map((img, idx) => (
                   <button
                     key={img.id}
                     onClick={() => setSelectedImageIdx(idx)}
-                    className={`w-16 h-14 rounded-lg overflow-hidden border-2 flex-shrink-0 cursor-pointer transition-all ${
-                      selectedImageIdx === idx ? 'border-brand-800' : 'border-line opacity-60 hover:opacity-100'
+                    className={`w-20 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 cursor-pointer transition-all ${
+                      selectedImageIdx === idx ? 'border-brand-800 dark:border-lime-400 ring-2 ring-brand-500/20 shadow-md' : 'border-line opacity-60 hover:opacity-100'
                     }`}
                     aria-label={`View image ${idx + 1}`}
                   >
@@ -177,70 +194,74 @@ export default function CropDetail() {
             )}
           </div>
 
-          {/* Details */}
-          <div className="space-y-5">
+          {/* Details & Trade Action */}
+          <div className="space-y-6">
             <div>
               <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-                <Badge>{listing.category?.name}</Badge>
-                {listing.quality && <Badge colour="info">{t('marketplace.grade', { grade: listing.quality, defaultValue: `Grade ${listing.quality}` })}</Badge>}
-                {listing.isOrganic && <Badge colour="brand" icon={<Leaf className="w-3 h-3" />}>{t('marketplace.organic', 'Organic')}</Badge>}
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-800 dark:bg-brand-900/40 dark:text-lime-400 border border-brand-200/50">
+                  <ShieldCheck className="w-3.5 h-3.5 text-success" /> Verified Farm Source
+                </span>
+                <span className="text-xs text-ink-subtle">•</span>
+                <span className="text-xs text-ink-muted">Listed {listing.createdAt ? formatDate(listing.createdAt) : 'Recently'}</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-semibold text-ink tracking-tight">{listing.cropName}</h1>
-              {listing.location && (
-                <p className="text-sm text-ink-muted flex items-center gap-1.5 mt-2">
-                  <MapPin className="w-4 h-4 text-brand-700" /> {listing.location}
-                </p>
-              )}
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-ink tracking-tight font-heading">{listing.cropName}</h1>
             </div>
 
             {/* Pricing card */}
-            <Card className="p-5 space-y-4">
+            <Card className="p-6 space-y-4 rounded-2xl border border-line shadow-card">
               <div className="flex items-end justify-between">
                 <div>
-                  <span className="text-xs text-ink-muted block">{t('common.price', 'Price per unit')}</span>
-                  <span className="text-3xl font-semibold text-brand-800">
-                    {formatCurrency(listing.pricePerUnit)}
-                  </span>
-                  <span className="text-sm text-ink-muted ml-1">/ {listing.unit}</span>
+                  <span className="text-xs uppercase tracking-wider text-ink-subtle font-semibold block">{t('common.price', 'Base Mandi Price')}</span>
+                  <div className="flex items-baseline gap-1 mt-1">
+                    <span className="text-3xl sm:text-4xl font-extrabold text-brand-800 dark:text-lime-400 font-mono">
+                      {formatCurrency(listing.pricePerUnit)}
+                    </span>
+                    <span className="text-sm font-semibold text-ink-subtle">/ {listing.unit}</span>
+                  </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-xs text-ink-muted block">{t('marketplace.available', 'Available stock')}</span>
-                  <span className="text-lg font-semibold text-ink">
+                  <span className="text-xs uppercase tracking-wider text-ink-subtle font-semibold block">{t('marketplace.available', 'Available Stock')}</span>
+                  <span className="inline-block text-base font-extrabold text-ink bg-surface-muted px-3 py-1 rounded-xl border border-line mt-1 font-mono">
                     {formatNumber(listing.quantity)} {listing.unit}
                   </span>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 pt-3 border-t border-line text-xs">
+
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-line text-xs">
                 <div>
-                  <span className="text-ink-muted">{t('cropDetail.harvestDate', 'Harvest date')}</span>
-                  <p className="text-ink font-medium">
-                    {listing.harvestDate ? formatDate(listing.harvestDate) : t('common.justNow', 'Recent')}
+                  <span className="text-ink-subtle font-medium">{t('cropDetail.harvestDate', 'Harvest date')}</span>
+                  <p className="text-ink font-bold mt-0.5">
+                    {listing.harvestDate ? formatDate(listing.harvestDate) : t('common.justNow', 'Recent Harvest')}
                   </p>
                 </div>
                 <div>
-                  <span className="text-ink-muted">{t('common.status', 'Status')}</span>
-                  <p className="text-brand-800 font-semibold uppercase">{listing.status}</p>
+                  <span className="text-ink-subtle font-medium">{t('common.status', 'Trading Status')}</span>
+                  <p className="text-brand-800 dark:text-lime-400 font-extrabold uppercase mt-0.5 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-lime-500 animate-pulse" />
+                    {listing.status}
+                  </p>
                 </div>
               </div>
             </Card>
 
             {/* Description */}
             {listing.description && (
-              <div>
-                <h3 className="text-sm font-semibold text-ink mb-2">{t('cropDetail.description', 'Description')}</h3>
+              <div className="bg-surface-muted/50 rounded-2xl p-5 border border-line">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-ink-subtle mb-2 font-heading">{t('cropDetail.description', 'Produce Specifications')}</h3>
                 <p className="text-sm text-ink-muted leading-relaxed">{listing.description}</p>
               </div>
             )}
 
             {/* Farm info */}
             {listing.farm && (
-              <div className="bg-brand-50 border border-brand-100 rounded-xl p-4 flex items-center gap-3">
-                <div className="w-10 h-10 bg-brand-100 text-brand-800 rounded-lg flex items-center justify-center">
+              <div className="bg-surface border border-line rounded-2xl p-4 sm:p-5 flex items-center gap-3.5 shadow-card">
+                <div className="w-11 h-11 bg-brand-50 dark:bg-brand-900/40 text-brand-800 dark:text-lime-400 rounded-xl flex items-center justify-center border border-brand-200/50 shrink-0">
                   <Tractor className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-sm font-semibold text-ink">{listing.farm.name}</h4>
-                  <p className="text-xs text-ink-muted truncate">
+                  <div className="text-[11px] uppercase tracking-wider text-ink-subtle font-semibold">Origin Farm Holding</div>
+                  <h4 className="text-sm font-bold text-ink truncate font-heading">{listing.farm.name}</h4>
+                  <p className="text-xs text-ink-muted truncate mt-0.5">
                     {[listing.farm.address, listing.farm.district, listing.farm.state, listing.farm.pincode].filter(Boolean).join(', ')}
                   </p>
                 </div>
@@ -248,16 +269,16 @@ export default function CropDetail() {
             )}
 
             {/* Farmer / actions card */}
-            <Card className="p-5 space-y-4">
+            <Card className="p-6 space-y-4 rounded-2xl border border-line shadow-card">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 bg-surface-muted text-ink-muted rounded-full flex items-center justify-center text-sm font-semibold">
+                  <div className="w-11 h-11 bg-brand-800 text-white rounded-xl flex items-center justify-center text-base font-bold shadow-sm">
                     {farmer?.user?.name?.charAt(0)?.toUpperCase() || 'F'}
                   </div>
                   <div className="min-w-0">
-                    <h4 className="text-sm font-semibold text-ink truncate">{farmer?.user?.name || farmer?.farmName}</h4>
+                    <h4 className="text-sm font-bold text-ink truncate font-heading">{farmer?.user?.name || farmer?.farmName}</h4>
                     <p className="text-xs text-ink-muted truncate">
-                      {[farmer?.district, farmer?.state].filter(Boolean).join(', ') || t('cropDetail.verifiedSeller', 'Verified farmer')}
+                      {[farmer?.district, farmer?.state].filter(Boolean).join(', ') || t('cropDetail.verifiedSeller', 'Verified Agricultural Producer')}
                     </p>
                   </div>
                 </div>
@@ -266,18 +287,18 @@ export default function CropDetail() {
                 </Badge>
               </div>
 
-              <div className="pt-3 border-t border-line space-y-3">
+              <div className="pt-4 border-t border-line space-y-3">
                 {offerSuccessMessage && (
                   <InlineAlert type="success" message={offerSuccessMessage} onDismiss={() => setOfferSuccessMessage('')} />
                 )}
 
                 {isOwner ? (
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-ink-muted">{t('cropDetail.activeOffersTitle', 'Incoming offers')}</span>
-                      <span className="font-semibold text-brand-800">{myOffers.length}</span>
+                    <div className="flex items-center justify-between text-sm py-1">
+                      <span className="text-ink-muted">{t('cropDetail.activeOffersTitle', 'Incoming Trade Offers')}</span>
+                      <span className="font-extrabold text-brand-800 dark:text-lime-400 font-mono text-base">{myOffers.length} Offers</span>
                     </div>
-                    <ButtonLink to="/offers" className="w-full">{t('offers.titleFarmer', 'Manage offers')}</ButtonLink>
+                    <ButtonLink to="/offers" className="w-full justify-center">{t('offers.titleFarmer', 'Manage Offers & Bids')}</ButtonLink>
                   </div>
                 ) : user?.role === 'BUYER' ? (
                   (() => {
@@ -286,16 +307,18 @@ export default function CropDetail() {
 
                     if (activeOffer) {
                       return (
-                        <div className="p-4 rounded-lg bg-warning-soft border border-warning-edge space-y-2">
+                        <div className="p-4 rounded-xl bg-warning-soft border border-warning-edge space-y-2.5">
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-warning font-semibold">{t('offers.counterOffer', 'Active negotiation')}</span>
+                            <span className="text-warning font-bold flex items-center gap-1.5">
+                              <Handshake className="w-4 h-4" /> Active Negotiation In Progress
+                            </span>
                             <Badge colour="warning">{activeOffer.status}</Badge>
                           </div>
-                          <p className="text-sm text-warning">
-                            {formatCurrency(activeOffer.offeredPrice)}/{listing.unit} × {formatNumber(activeOffer.quantity)} {listing.unit}
+                          <p className="text-xs sm:text-sm text-warning/90">
+                            Current offered rate: <strong className="font-mono">{formatCurrency(activeOffer.offeredPrice)}/{listing.unit}</strong> for {formatNumber(activeOffer.quantity)} {listing.unit}
                           </p>
-                          <ButtonLink to="/offers" variant="secondary" className="w-full">
-                            {t('offers.card.counterOffer', 'View negotiation')}
+                          <ButtonLink to="/offers" variant="secondary" className="w-full justify-center">
+                            {t('offers.card.counterOffer', 'View Negotiation Desk')}
                           </ButtonLink>
                         </div>
                       );
@@ -303,28 +326,30 @@ export default function CropDetail() {
 
                     if (acceptedOffer) {
                       return (
-                        <div className="p-4 rounded-lg bg-success-soft border border-success-edge space-y-2">
+                        <div className="p-4 rounded-xl bg-success-soft border border-success-edge space-y-2.5">
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-success font-semibold">{t('status.accepted', 'Offer accepted!')}</span>
-                            <span className="font-medium text-success">
+                            <span className="text-success font-bold flex items-center gap-1.5">
+                              <CheckCircle2 className="w-4 h-4" /> Offer Accepted by Farmer!
+                            </span>
+                            <span className="font-extrabold text-success font-mono">
                               {formatCurrency(acceptedOffer.offeredPrice)}/{listing.unit}
                             </span>
                           </div>
-                          <ButtonLink to="/offers" className="w-full">
-                            {t('offers.card.actions.checkout', 'Proceed to Settlement & Pay')}
+                          <ButtonLink to="/offers" className="w-full justify-center bg-brand-800 text-white font-bold">
+                            {t('offers.card.actions.checkout', 'Proceed to Settlement & Waybill')}
                           </ButtonLink>
                         </div>
                       );
                     }
 
                     return (
-                      <div className="flex gap-2">
-                        <Button className="flex-1" icon={<Handshake className="w-4 h-4" />} onClick={() => setOfferModalOpen(true)}>
-                          {t('cropDetail.makeOffer', 'Make an offer')}
+                      <div className="flex gap-2.5">
+                        <Button className="flex-1 justify-center" icon={<Handshake className="w-4 h-4" />} onClick={() => setOfferModalOpen(true)}>
+                          {t('cropDetail.makeOffer', 'Place Trade Offer')}
                         </Button>
                         <Button
                           variant="secondary"
-                          icon={<MessageSquare className="w-4 h-4 text-brand-800" />}
+                          icon={<MessageSquare className="w-4 h-4 text-brand-800 dark:text-lime-400" />}
                           onClick={handleMessageFarmer}
                           loading={startingChat}
                         >
@@ -334,8 +359,8 @@ export default function CropDetail() {
                     );
                   })()
                 ) : !user ? (
-                  <ButtonLink to="/login" variant="secondary" className="w-full">
-                    {t('auth.signInTitle', 'Sign in to place an offer')}
+                  <ButtonLink to="/login" variant="secondary" className="w-full justify-center">
+                    {t('auth.signInTitle', 'Sign in to Place Trade Offer')}
                   </ButtonLink>
                 ) : null}
               </div>

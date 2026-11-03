@@ -9,109 +9,132 @@
    ============================================================ */
 
 :root {
-  /* ── Surfaces & Neutrals (Light) ────────────────────────── */
-  --canvas:        #F7F8F5;  /* warm off-white page background */
+  /* ── Surfaces & Neutrals (Light: Warm Cream & Crisp White) ── */
+  --canvas:        #FAF8F5;  /* premium warm cream background */
   --surface:       #FFFFFF;  /* pure white card surface */
-  --surface-muted: #F4F6F2;  /* subtle secondary surface */
-  --surface-sunken:#EFEFEA;  /* sunken/recessed area */
+  --surface-muted: #F3EFE6;  /* warm ecru secondary surface */
+  --surface-sunken:#EBE5D8;  /* sunken/recessed area */
 
-  --ink:         #202622;   /* main text — deep charcoal w/ green tint */
-  --ink-muted:   #5E6360;   /* secondary text */
-  --ink-subtle:  #8A8F8B;   /* metadata / tertiary */
-  --line:        #E8EAE4;   /* default hairline border */
-  --line-strong: #D6DBD4;   /* emphasised border */
+  --ink:         #141D17;   /* main text — deep obsidian charcoal with green undertone */
+  --ink-muted:   #4A554E;   /* secondary text */
+  --ink-subtle:  #78847C;   /* metadata / tertiary */
+  --line:        #E4E7DF;   /* default elegant hairline border */
+  --line-strong: #D0D6CA;   /* emphasised border */
 
-  /* ── Brand · Deep Forest Green (anchor: #174D3A) ────────── */
-  --brand-50:  #EEF4F0;
-  --brand-100: #D6E5DD;
-  --brand-200: #B0CABB;
-  --brand-300: #82A88F;
-  --brand-400: #53856A;
-  --brand-500: #356B52;
-  --brand-600: #285742;
-  --brand-700: #245543;
-  --brand-800: #174D3A;   /* primary action */
-  --brand-900: #103524;   /* primary hover (darker) */
-  --brand-950: #0A2418;
+  /* ── Brand · Deep Forest Green (anchor: #12402D) ────────── */
+  --brand-50:  #EFF8F3;
+  --brand-100: #D8F0E4;
+  --brand-200: #B2DEC9;
+  --brand-300: #7BC5A3;
+  --brand-400: #48AC80;
+  --brand-500: #2D8C64;
+  --brand-600: #206E4E;
+  --brand-700: #19563D;
+  --brand-800: #12402D;   /* primary action anchor */
+  --brand-900: #0C2E20;   /* primary hover */
+  --brand-950: #071E14;
+
+  /* ── Fresh Lime Green Accent (Energy & Vitality) ─────────── */
+  --lime-50:  #F7FEE7;
+  --lime-100: #ECFCCB;
+  --lime-200: #D9F99D;
+  --lime-300: #BEF264;
+  --lime-400: #A3E635;
+  --lime-500: #84CC16;
+  --lime-600: #65A30D;
+  --lime-700: #4D7C0F;
+  --lime-800: #3F6212;
 
   /* ── Semantic · Status palette ──────────────────────────── */
-  --success:       #1F7A4D;
-  --success-soft:  #E8F3EC;
-  --success-edge:  #C9E3D2;
+  --success:       #15803D;
+  --success-soft:  #DCFCE7;
+  --success-edge:  #BBF7D0;
 
   --warning:       #B45309;
-  --warning-soft:  #FBF1E0;
-  --warning-edge:  #F0DDB8;
+  --warning-soft:  #FEF3C7;
+  --warning-edge:  #FDE68A;
 
-  --danger:        #B42318;
-  --danger-soft:   #FDECEA;
-  --danger-edge:   #F7CFC9;
+  --danger:        #B91C1C;
+  --danger-soft:   #FEE2E2;
+  --danger-edge:   #FECACA;
 
-  --info:          #1F5A8A;
-  --info-soft:     #E8F0F7;
-  --info-edge:     #C9DDF0;
+  --info:          #0369A1;
+  --info-soft:     #E0F2FE;
+  --info-edge:     #BAE6FD;
 
-  /* ── Elevation Shadows ──────────────────────────────────── */
-  --shadow-card:        0 1px 2px rgba(20, 30, 25, 0.04), 0 1px 1px rgba(20, 30, 25, 0.02);
-  --shadow-card-hover:  0 6px 18px rgba(20, 40, 30, 0.08), 0 2px 6px rgba(20, 40, 30, 0.04);
-  --shadow-popover:     0 12px 32px rgba(16, 40, 30, 0.12), 0 4px 10px rgba(16, 40, 30, 0.06);
-  --shadow-modal:       0 24px 64px rgba(16, 40, 30, 0.20), 0 8px 20px rgba(16, 40, 30, 0.10);
+  /* ── Elevation Shadows (Multi-layered subtle ambient glow) ── */
+  --shadow-card:        0 1px 3px rgba(18, 64, 45, 0.05), 0 1px 2px rgba(18, 64, 45, 0.03);
+  --shadow-card-hover:  0 12px 28px -4px rgba(18, 64, 45, 0.12), 0 4px 10px -2px rgba(18, 64, 45, 0.06);
+  --shadow-popover:     0 16px 40px -6px rgba(12, 46, 32, 0.16), 0 6px 14px -3px rgba(12, 46, 32, 0.08);
+  --shadow-modal:       0 28px 72px -8px rgba(7, 30, 20, 0.28), 0 10px 24px -4px rgba(7, 30, 20, 0.12);
 }
 
 .dark, [data-theme='dark'] {
-  /* ── Surfaces & Neutrals (Dark Mode) ────────────────────── */
-  --canvas:        #0E1210;  /* deep charcoal background with subtle forest hue */
-  --surface:       #161D19;  /* dark-green tinted surface for cards and modals */
-  --surface-muted: #1E2722;  /* elevated/secondary dark surface */
-  --surface-sunken:#111613;  /* recessed/inset dark surface */
+  /* ── Surfaces & Neutrals (Dark Mode: Deep Obsidian Forest) ─ */
+  --canvas:        #090E0B;  /* obsidian canvas */
+  --surface:       #111A14;  /* dark forest surface */
+  --surface-muted: #17241C;  /* elevated surface */
+  --surface-sunken:#0D1410;  /* recessed dark surface */
 
-  --ink:         #ECEFEA;   /* crisp, readable off-white */
-  --ink-muted:   #9EABA2;   /* readable secondary text */
-  --ink-subtle:  #6A7970;   /* metadata / tertiary */
-  --line:        #253029;   /* subtle dark border */
-  --line-strong: #36443B;   /* emphasised dark border */
+  --ink:         #F3F6F4;   /* crisp readable off-white */
+  --ink-muted:   #9BAC9F;   /* readable secondary */
+  --ink-subtle:  #67796D;   /* tertiary */
+  --line:        #1C2C22;   /* subtle dark border */
+  --line-strong: #2A4032;   /* emphasised dark border */
 
-  /* ── Brand · Refined for dark mode contrast & vibrancy ──── */
-  --brand-50:  #152B20;
-  --brand-100: #1D3B2C;
-  --brand-200: #274D3B;
-  --brand-300: #356750;
-  --brand-400: #468769;
-  --brand-500: #59AA84;
-  --brand-600: #479772;
-  --brand-700: #38805F;
-  --brand-800: #2C6B4E;   /* primary action in dark mode */
-  --brand-900: #20533C;   /* hover */
-  --brand-950: #0B1C13;
+  /* ── Brand in Dark Mode ──────────────────────────────────── */
+  --brand-50:  #0F281B;
+  --brand-100: #173826;
+  --brand-200: #204C34;
+  --brand-300: #2D6546;
+  --brand-400: #3E855C;
+  --brand-500: #52AA78;
+  --brand-600: #429567;
+  --brand-700: #347E56;
+  --brand-800: #276846;   /* primary action in dark mode */
+  --brand-900: #1D5437;   /* hover */
+  --brand-950: #0B2417;
+
+  /* ── Fresh Lime in Dark Mode (Vibrant & Luminous) ────────── */
+  --lime-50:  #142407;
+  --lime-100: #1F3B0A;
+  --lime-200: #2D550E;
+  --lime-300: #448013;
+  --lime-400: #65A30D;
+  --lime-500: #84CC16;
+  --lime-600: #A3E635;
+  --lime-700: #BEF264;
+  --lime-800: #D9F99D;
 
   /* ── Semantic · Status palette in dark mode ─────────────── */
-  --success:       #34D399;
-  --success-soft:  rgba(6, 78, 59, 0.35);
-  --success-edge:  rgba(6, 95, 70, 0.55);
+  --success:       #4ADE80;
+  --success-soft:  rgba(21, 128, 61, 0.25);
+  --success-edge:  rgba(34, 197, 94, 0.40);
 
   --warning:       #FBBF24;
-  --warning-soft:  rgba(120, 53, 15, 0.35);
-  --warning-edge:  rgba(146, 64, 14, 0.55);
+  --warning-soft:  rgba(180, 83, 9, 0.25);
+  --warning-edge:  rgba(245, 158, 11, 0.40);
 
   --danger:        #F87171;
-  --danger-soft:   rgba(127, 29, 29, 0.35);
-  --danger-edge:   rgba(153, 27, 27, 0.55);
+  --danger-soft:   rgba(185, 28, 28, 0.25);
+  --danger-edge:   rgba(239, 68, 68, 0.40);
 
   --info:          #38BDF8;
-  --info-soft:     rgba(12, 74, 110, 0.35);
-  --info-edge:     rgba(7, 89, 133, 0.55);
+  --info-soft:     rgba(3, 105, 161, 0.25);
+  --info-edge:     rgba(14, 165, 233, 0.40);
 
   /* ── Elevation Shadows in dark mode ─────────────────────── */
-  --shadow-card:        0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.25);
-  --shadow-card-hover:  0 8px 24px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
-  --shadow-popover:     0 14px 36px rgba(0, 0, 0, 0.65), 0 4px 12px rgba(0, 0, 0, 0.45);
-  --shadow-modal:       0 24px 64px rgba(0, 0, 0, 0.80), 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-card:        0 1px 3px rgba(0, 0, 0, 0.6), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card-hover:  0 12px 30px rgba(0, 0, 0, 0.75), 0 4px 10px rgba(0, 0, 0, 0.5);
+  --shadow-popover:     0 18px 48px rgba(0, 0, 0, 0.85), 0 6px 16px rgba(0, 0, 0, 0.6);
+  --shadow-modal:       0 32px 80px rgba(0, 0, 0, 0.95), 0 12px 32px rgba(0, 0, 0, 0.7);
 }
 
 @theme {
   /* ── Typography ─────────────────────────────────────────── */
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', var(--font-sans);
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* ── Brand ──────────────────────────────────────────────── */
@@ -126,6 +149,17 @@
   --color-brand-800: var(--brand-800);
   --color-brand-900: var(--brand-900);
   --color-brand-950: var(--brand-950);
+
+  /* ── Lime Accent ────────────────────────────────────────── */
+  --color-lime-50:   var(--lime-50);
+  --color-lime-100:  var(--lime-100);
+  --color-lime-200:  var(--lime-200);
+  --color-lime-300:  var(--lime-300);
+  --color-lime-400:  var(--lime-400);
+  --color-lime-500:  var(--lime-500);
+  --color-lime-600:  var(--lime-600);
+  --color-lime-700:  var(--lime-700);
+  --color-lime-800:  var(--lime-800);
 
   /* ── Surfaces & Neutrals ────────────────────────────────── */
   --color-canvas:        var(--canvas);
@@ -196,18 +230,20 @@
   }
 
   /* Headings */
-  h1, h2, h3, h4 {
-    letter-spacing: -0.02em;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.025em;
     color: var(--color-ink);
+    font-weight: 700;
   }
 
   ::selection {
-    background: var(--color-brand-200);
+    background: var(--color-lime-200);
     color: var(--color-brand-950);
   }
 
   .dark ::selection {
-    background: var(--color-brand-700);
+    background: var(--color-lime-600);
     color: #FFFFFF;
   }
 
@@ -247,8 +283,69 @@ html.theme-transitioning *::after {
   .fade-in { animation: fadeIn 0.22s ease-out both; }
   .slide-up { animation: slideUp 0.24s ease-out both; }
   .scale-in { animation: scaleIn 0.18s ease-out both; }
+  .pulse-slow { animation: pulseSlow 3s ease-in-out infinite; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Premium Card Hover Lift */
+  .card-lift {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  /* Frosted Glass Paneling */
+  .glass-panel {
+    background-color: color-mix(in srgb, var(--color-surface) 82%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  /* High-tech glow & gradient helpers */
+  .glow-lime {
+    box-shadow: 0 0 20px -3px rgba(132, 204, 22, 0.35);
+  }
+  .glow-forest {
+    box-shadow: 0 0 24px -4px rgba(18, 64, 45, 0.25);
+  }
+
+  /* Agritech Ambient Mesh Background */
+  .agri-mesh-bg {
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(132, 204, 22, 0.08) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(18, 64, 45, 0.07) 0%, transparent 45%);
+  }
+
+  .dark .agri-mesh-bg {
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(132, 204, 22, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(34, 197, 94, 0.04) 0%, transparent 45%);
+  }
+
+  /* Gradient Text utilities */
+  .gradient-text-forest {
+    background: linear-gradient(135deg, var(--color-brand-800) 0%, var(--color-brand-600) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .dark .gradient-text-forest {
+    background: linear-gradient(135deg, #FFFFFF 0%, var(--color-brand-300) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .gradient-text-lime {
+    background: linear-gradient(135deg, var(--color-brand-800) 20%, var(--color-lime-600) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .dark .gradient-text-lime {
+    background: linear-gradient(135deg, #FFFFFF 30%, var(--color-lime-400) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 
   /* Subtle entrance for list items */
   .stagger > * { animation: fadeIn 0.28s ease-out both; }
@@ -263,6 +360,7 @@ html.theme-transitioning *::after {
   @keyframes fadeIn  { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
   @keyframes slideUp  { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
   @keyframes scaleIn  { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
+  @keyframes pulseSlow { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
   @keyframes shimmer  { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 }
 

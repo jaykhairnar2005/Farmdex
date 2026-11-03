@@ -129,7 +129,7 @@ export default function MyListings() {
           title={t('myListings.title', 'My Produce Batches')}
           subtitle={t('myListings.subtitle', 'Manage your listed harvests, adjust pricing, and track remaining quantities.')}
           actions={
-            <Button icon={<Plus className="w-4 h-4" />} onClick={() => { setListingToEdit(null); setModalOpen(true); }}>
+            <Button variant="lime" icon={<Plus className="w-4 h-4" />} onClick={() => { setListingToEdit(null); setModalOpen(true); }}>
               {t('myListings.listNew', 'List New Harvest')}
             </Button>
           }
@@ -138,7 +138,7 @@ export default function MyListings() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <StatCard label={t('home.stats.activeListings', 'Total batches')} value={listings.length} icon={<Sprout />} />
-          <StatCard label={t('status.active', 'Active in market')} value={active} icon={<Sprout />} tone="success" />
+          <StatCard label={t('status.active', 'Active in market')} value={active} icon={<Sprout />} tone="lime" />
           <StatCard label={t('status.inactive', 'Inactive / draft')} value={inactive} icon={<Sprout />} />
           <StatCard label={t('status.soldOut', 'Sold out')} value={sold} icon={<Sprout />} tone="warning" />
         </div>
@@ -148,11 +148,13 @@ export default function MyListings() {
         )}
 
         {/* Filter */}
-        <FilterPills items={statusPills} value={statusFilter} onChange={(v) => { setStatusFilter(v); }} />
+        <div className="bg-surface p-2 rounded-2xl border border-line shadow-card inline-block">
+          <FilterPills items={statusPills} value={statusFilter} onChange={(v) => { setStatusFilter(v); }} />
+        </div>
 
         {/* Table */}
         {loading ? (
-          <div className="bg-surface border border-line rounded-xl overflow-hidden">
+          <div className="bg-surface border border-line rounded-2xl overflow-hidden shadow-card">
             <SkeletonTable rows={5} cols={6} />
           </div>
         ) : listings.length === 0 ? (
@@ -163,7 +165,7 @@ export default function MyListings() {
             action={{ label: t('myListings.listNew', 'Add first produce'), onClick: () => { setListingToEdit(null); setModalOpen(true); } }}
           />
         ) : (
-          <div className="bg-surface border border-line rounded-xl overflow-hidden shadow-card">
+          <div className="bg-surface border border-line rounded-2xl overflow-hidden shadow-card">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-surface-muted border-b border-line text-[11px] uppercase font-semibold text-ink-subtle tracking-wider">

@@ -82,7 +82,7 @@ export default function Farms() {
           title={t('farms.title', 'My Registered Farms')}
           subtitle={t('farms.subtitle', 'Manage the agricultural land, soil types, and acreage where your produce is cultivated.')}
           actions={
-            <Button icon={<Plus className="w-4 h-4" />} onClick={() => { setFarmToEdit(null); setModalOpen(true); }}>
+            <Button variant="lime" icon={<Plus className="w-4 h-4" />} onClick={() => { setFarmToEdit(null); setModalOpen(true); }}>
               {t('farms.registerNew', 'Register New Farm')}
             </Button>
           }
@@ -90,7 +90,7 @@ export default function Farms() {
 
         {/* Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <StatCard label={t('farms.title', 'Registered Farms')} value={farms.length} icon={<Tractor />} tone="brand" />
+          <StatCard label={t('farms.title', 'Registered Farms')} value={farms.length} icon={<Tractor />} tone="lime" />
           <StatCard
             label={t('farms.acres', { count: totalAcreage > 0 ? totalAcreage.toFixed(1) : 0, defaultValue: `${totalAcreage.toFixed(1)} Acres` })}
             value={totalAcreage > 0 ? `${totalAcreage.toFixed(1)} acres` : '—'}
@@ -111,7 +111,7 @@ export default function Farms() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i} className="overflow-hidden">
+              <Card key={i} className="overflow-hidden rounded-2xl border border-line">
                 <SkeletonBlock className="h-28 w-full rounded-none" />
                 <div className="p-5 space-y-3">
                   <SkeletonBlock className="h-4 w-2/3" />
@@ -131,7 +131,7 @@ export default function Farms() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 stagger">
             {farms.map((farm) => (
-              <Card key={farm.id} className="overflow-hidden flex flex-col hover:shadow-card-hover transition-shadow">
+              <Card key={farm.id} className="overflow-hidden rounded-2xl border border-line flex flex-col hover:shadow-card-hover transition-all shadow-card card-lift">
                 {/* Banner */}
                 <div className="h-28 relative overflow-hidden">
                   <img

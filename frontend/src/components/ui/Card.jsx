@@ -5,13 +5,14 @@ import React from 'react';
  * Consistent surface, hairline border, soft elevation.
  */
 
-export function Card({ as: Tag = 'div', interactive = false, className = '', children, ...props }) {
+export function Card({ as: Tag = 'div', interactive = false, glass = false, className = '', children, ...props }) {
   return (
     <Tag
       {...props}
       className={[
-        'bg-surface border border-line rounded-xl shadow-card',
-        interactive && 'transition-shadow duration-200 hover:shadow-card-hover cursor-pointer',
+        glass ? 'glass-panel' : 'bg-surface',
+        'border border-line rounded-2xl shadow-card',
+        interactive && 'card-lift cursor-pointer',
         className,
       ]
         .filter(Boolean)
@@ -26,7 +27,7 @@ export function CardHeader({ className = '', children, ...props }) {
   return (
     <div
       {...props}
-      className={['px-5 py-4 border-b border-line', className].filter(Boolean).join(' ')}
+      className={['px-6 py-4.5 border-b border-line flex items-center justify-between gap-4', className].filter(Boolean).join(' ')}
     >
       {children}
     </div>
@@ -35,7 +36,7 @@ export function CardHeader({ className = '', children, ...props }) {
 
 export function CardBody({ className = '', children, ...props }) {
   return (
-    <div {...props} className={['p-5', className].filter(Boolean).join(' ')}>
+    <div {...props} className={['p-6', className].filter(Boolean).join(' ')}>
       {children}
     </div>
   );
@@ -45,7 +46,7 @@ export function CardFooter({ className = '', children, ...props }) {
   return (
     <div
       {...props}
-      className={['px-5 py-3.5 border-t border-line bg-surface-muted/50', className]
+      className={['px-6 py-4 border-t border-line bg-surface-muted/40 rounded-b-2xl flex items-center justify-between gap-4', className]
         .filter(Boolean)
         .join(' ')}
     >

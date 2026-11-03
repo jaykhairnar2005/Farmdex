@@ -316,17 +316,17 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-canvas text-ink flex flex-col">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6 flex-1 fade-in">
+      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6 flex-1 fade-in">
         {/* Top Header Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-5">
           <div className="flex items-center space-x-3.5">
-            <div className="p-2.5 bg-brand-50 border border-brand-100 rounded-xl text-brand-800">
+            <div className="p-3 bg-brand-50 dark:bg-brand-900/40 border border-brand-200/60 dark:border-brand-800 rounded-2xl text-brand-800 dark:text-lime-400 shadow-sm">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2.5">
-                <h1 className="text-2xl font-bold tracking-tight text-ink">{t('admin.title')}</h1>
-                <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-brand-50 text-brand-800 border border-brand-200 uppercase">
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink font-heading">{t('admin.title')}</h1>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-900/40 text-brand-800 dark:text-lime-400 border border-brand-200/50 uppercase">
                   FarmDex Ops
                 </span>
               </div>
@@ -338,6 +338,7 @@ export default function AdminDashboard() {
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => {
                 loadStats();
                 if (activeTab === 'users') loadUsers(usersPagination.page);
@@ -346,7 +347,7 @@ export default function AdminDashboard() {
                 if (activeTab === 'complaints') loadComplaints(complaintsPagination.page);
                 if (activeTab === 'audit') loadAuditLogs(auditPagination.page);
               }}
-              className="px-3.5 py-2 bg-surface border border-line hover:bg-surface-muted text-ink rounded-lg shadow-card transition-colors cursor-pointer flex items-center gap-2 text-xs font-medium"
+              className="px-4 py-2 bg-surface border border-line hover:bg-surface-muted text-ink rounded-xl shadow-card transition-all cursor-pointer flex items-center gap-2 text-xs font-bold active:scale-[0.98]"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               <span>{t('common.refresh')}</span>
@@ -366,14 +367,14 @@ export default function AdminDashboard() {
         )}
 
         {successMsg && (
-          <div className="p-4 rounded-xl bg-brand-50 border border-brand-200 text-brand-800 text-sm flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 shrink-0 text-brand-600" />
-            <span className="flex-1">{successMsg}</span>
+          <div className="p-4 rounded-xl bg-brand-50 dark:bg-brand-900/40 border border-brand-200 text-brand-800 dark:text-lime-400 text-sm flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 shrink-0 text-lime-600 dark:text-lime-400" />
+            <span className="flex-1 font-semibold">{successMsg}</span>
           </div>
         )}
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-line">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-line">
           {[
             { id: 'overview', label: t('admin.tabs.overview'), icon: DollarSign },
             { id: 'users', label: t('admin.tabs.users'), icon: Users, badge: stats?.users?.total },
@@ -387,10 +388,11 @@ export default function AdminDashboard() {
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2.5 rounded-lg font-medium text-xs sm:text-sm whitespace-nowrap transition-colors flex items-center gap-2 cursor-pointer ${
+                className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
                   isSelected
-                    ? 'bg-brand-800 text-white shadow-card'
+                    ? 'bg-brand-800 text-white shadow-md'
                     : 'text-ink-muted hover:text-ink hover:bg-surface-sunken border border-transparent'
                 }`}
               >
@@ -398,9 +400,9 @@ export default function AdminDashboard() {
                 <span>{tab.label}</span>
                 {tab.badge !== undefined && tab.badge > 0 && (
                   <span
-                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                       isSelected
-                        ? 'bg-surface/20 text-white'
+                        ? 'bg-white/20 text-white'
                         : tab.id === 'complaints' && tab.badge > 0
                         ? 'bg-red-100 text-danger'
                         : 'bg-surface-sunken text-ink'

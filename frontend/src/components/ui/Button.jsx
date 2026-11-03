@@ -13,21 +13,23 @@ import { Link } from 'react-router-dom';
 
 const variants = {
   primary:
-    'bg-brand-800 text-white border-transparent hover:bg-brand-900 active:bg-brand-900 disabled:bg-brand-200 disabled:text-brand-50',
+    'bg-brand-800 text-white border-transparent hover:bg-brand-900 active:scale-[0.98] shadow-sm hover:shadow-card-hover disabled:bg-brand-200 disabled:text-brand-50 disabled:shadow-none',
+  lime:
+    'bg-lime-500 text-brand-950 font-semibold border-lime-600/30 hover:bg-lime-400 active:scale-[0.98] shadow-sm hover:shadow-lime transition-all duration-200 disabled:opacity-40 disabled:shadow-none',
   secondary:
-    'bg-surface text-ink border-line hover:bg-surface-muted active:bg-surface-sunken disabled:opacity-40',
+    'bg-surface text-ink border-line hover:bg-surface-muted hover:border-line-strong active:scale-[0.98] shadow-sm disabled:opacity-40',
   ghost:
-    'bg-transparent text-ink-muted border-transparent hover:bg-surface-muted active:bg-surface-sunken disabled:opacity-40',
+    'bg-transparent text-ink-muted border-transparent hover:bg-surface-muted hover:text-ink active:scale-[0.98] disabled:opacity-40',
   danger:
-    'bg-danger text-white border-transparent hover:bg-red-700 active:bg-red-800 disabled:opacity-40',
+    'bg-danger text-white border-transparent hover:bg-red-700 active:scale-[0.98] shadow-sm disabled:opacity-40',
   outline:
-    'bg-transparent text-brand-800 border-brand-800 hover:bg-brand-50 active:bg-brand-100 disabled:opacity-40',
+    'bg-transparent text-brand-800 dark:text-brand-300 border-brand-800/40 hover:bg-brand-50/60 dark:hover:bg-brand-950/60 hover:border-brand-800 active:scale-[0.98] disabled:opacity-40',
 };
 
 const sizes = {
-  sm: 'h-8 px-3 text-xs gap-1.5 rounded-md',
-  md: 'h-9 px-4 text-sm gap-2 rounded-lg',
-  lg: 'h-11 px-6 text-sm gap-2 rounded-lg',
+  sm: 'h-8 px-3 text-xs gap-1.5 rounded-lg',
+  md: 'h-10 px-4 text-sm gap-2 rounded-xl',
+  lg: 'h-12 px-6 text-base gap-2.5 rounded-xl font-semibold',
 };
 
 export function Button({
@@ -130,7 +132,7 @@ export function ButtonLink({
       to={to}
       {...props}
       className={[
-        'inline-flex items-center justify-center font-medium border transition-colors whitespace-nowrap select-none',
+        'inline-flex items-center justify-center font-medium border transition-all duration-200 whitespace-nowrap select-none cursor-pointer active:scale-[0.98]',
         variants[variant] ?? variants.primary,
         sizes[size] ?? sizes.md,
         className,
