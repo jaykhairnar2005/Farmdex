@@ -44,11 +44,11 @@ export default function LanguageSelector({ variant = 'desktop' }) {
   if (variant === 'mobile') {
     return (
       <div className="w-full">
-        <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-charcoal-500 dark:text-charcoal-400">
+        <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-charcoal-500 dark:text-ink-muted">
           <Globe className="w-4 h-4 text-forest-600 dark:text-emerald-400" />
           <span>{t('common.language', 'Language')}</span>
         </div>
-        <div className="grid grid-cols-2 gap-1.5 p-1 mt-1 bg-sand-100/60 dark:bg-charcoal-800/80 rounded-xl border border-sand-200/80 dark:border-charcoal-700/80">
+        <div className="grid grid-cols-2 gap-1.5 p-1 mt-1 bg-sand-100/60 dark:bg-surface-muted/80 rounded-xl border border-sand-200/80 dark:border-line">
           {LANGUAGES.map((lang) => {
             const isActive = (i18n.language || 'en').startsWith(lang.code);
             return (
@@ -57,13 +57,15 @@ export default function LanguageSelector({ variant = 'desktop' }) {
                 onClick={() => handleSelect(lang.code)}
                 className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                   isActive
-                    ? 'bg-forest-600 text-white dark:bg-emerald-600 font-semibold shadow-xs'
-                    : 'text-charcoal-700 dark:text-charcoal-200 hover:bg-white dark:hover:bg-charcoal-700'
+                    ? 'bg-forest-600 text-white dark:bg-emerald-600 dark:text-white font-semibold shadow-xs'
+                    : 'text-charcoal-700 dark:text-ink hover:bg-white dark:hover:bg-surface'
                 }`}
               >
                 <div className="flex flex-col text-left leading-tight">
-                  <span className="font-semibold">{lang.nativeName}</span>
-                  <span className={`text-[10px] ${isActive ? 'text-forest-100 dark:text-emerald-100' : 'text-charcoal-400 dark:text-charcoal-400'}`}>
+                  <span className={`font-semibold ${isActive ? 'dark:text-white' : 'dark:text-ink'}`}>
+                    {lang.nativeName}
+                  </span>
+                  <span className={`text-[10px] ${isActive ? 'text-forest-100 dark:text-emerald-100' : 'text-charcoal-400 dark:text-ink-muted'}`}>
                     {lang.name}
                   </span>
                 </div>
@@ -85,7 +87,7 @@ export default function LanguageSelector({ variant = 'desktop' }) {
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         id="farmdex-language-selector-btn"
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-sand-300/80 dark:border-charcoal-700 bg-sand-50/80 dark:bg-charcoal-800/80 text-charcoal-700 dark:text-charcoal-200 hover:bg-sand-100 dark:hover:bg-charcoal-700/90 transition-all text-xs font-medium shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-forest-500/30 dark:focus:ring-emerald-400/30"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-sand-300/80 dark:border-line bg-sand-50/80 dark:bg-surface text-charcoal-700 dark:text-ink hover:bg-sand-100 dark:hover:bg-surface-muted transition-all text-xs font-medium shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-forest-500/30 dark:focus:ring-emerald-400/30"
         title={t('common.selectLanguage', 'Select Language')}
       >
         <Globe className="w-4 h-4 text-forest-600 dark:text-emerald-400 shrink-0" />
@@ -93,7 +95,7 @@ export default function LanguageSelector({ variant = 'desktop' }) {
           {currentLang.nativeName}
         </span>
         <ChevronDown
-          className={`w-3.5 h-3.5 text-charcoal-400 dark:text-charcoal-400 transition-transform duration-200 ${
+          className={`w-3.5 h-3.5 text-charcoal-400 dark:text-ink-subtle transition-transform duration-200 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
@@ -103,14 +105,14 @@ export default function LanguageSelector({ variant = 'desktop' }) {
         <div
           role="listbox"
           aria-label={t('common.selectLanguage', 'Select Language')}
-          className="absolute right-0 z-50 mt-2 w-72 origin-top-right rounded-2xl bg-white dark:bg-charcoal-850 p-2 shadow-xl ring-1 ring-black/5 dark:ring-white/10 border border-sand-200 dark:border-charcoal-750 focus:outline-hidden animate-in fade-in zoom-in-95 duration-150"
+          className="absolute right-0 z-50 mt-2 w-72 origin-top-right rounded-2xl bg-white dark:bg-surface p-2 shadow-xl dark:shadow-modal ring-1 ring-black/5 dark:ring-white/10 border border-sand-200 dark:border-line focus:outline-hidden animate-in fade-in zoom-in-95 duration-150"
         >
-          <div className="px-3 py-2 border-b border-sand-100 dark:border-charcoal-750 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-charcoal-700 dark:text-charcoal-200">
+          <div className="px-3 py-2 border-b border-sand-100 dark:border-line flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-charcoal-700 dark:text-ink">
               <Globe className="w-3.5 h-3.5 text-forest-600 dark:text-emerald-400" />
               <span>{t('common.selectLanguage', 'Select Language')}</span>
             </div>
-            <span className="text-[10px] text-charcoal-400 dark:text-charcoal-400 uppercase tracking-wider font-mono">
+            <span className="text-[10px] text-charcoal-400 dark:text-ink-subtle uppercase tracking-wider font-mono">
               10 Languages
             </span>
           </div>
@@ -126,24 +128,28 @@ export default function LanguageSelector({ variant = 'desktop' }) {
                   onClick={() => handleSelect(lang.code)}
                   className={`w-full flex items-center justify-between px-3 py-2 my-0.5 rounded-xl text-left text-xs transition-colors ${
                     isActive
-                      ? 'bg-forest-50 dark:bg-forest-950/40 text-forest-700 dark:text-emerald-400 font-semibold'
-                      : 'text-charcoal-700 dark:text-charcoal-300 hover:bg-sand-100/80 dark:hover:bg-charcoal-750/90'
+                      ? 'bg-forest-50 dark:bg-brand-900/60 text-forest-700 dark:text-emerald-300 font-semibold dark:border dark:border-emerald-500/30'
+                      : 'text-charcoal-700 dark:text-ink hover:bg-sand-100/80 dark:hover:bg-surface-muted'
                   }`}
                 >
                   <div className="flex flex-col">
-                    <span className="font-semibold text-sm leading-tight text-charcoal-900 dark:text-white">
+                    <span className={`font-semibold text-sm leading-tight text-charcoal-900 ${
+                      isActive ? 'dark:text-emerald-300' : 'dark:text-ink'
+                    }`}>
                       {lang.nativeName}
                     </span>
-                    <span className="text-[11px] text-charcoal-500 dark:text-charcoal-400">
+                    <span className={`text-[11px] text-charcoal-500 ${
+                      isActive ? 'dark:text-emerald-300/80' : 'dark:text-ink-muted'
+                    }`}>
                       {lang.name}
                     </span>
                   </div>
                   {isActive ? (
-                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-forest-600 dark:bg-emerald-500 text-white text-xs">
+                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-forest-600 dark:bg-emerald-500 text-white text-xs shadow-xs">
                       <Check className="w-3.5 h-3.5" />
                     </span>
                   ) : (
-                    <span className="text-[10px] text-charcoal-400 dark:text-charcoal-400 font-mono">
+                    <span className="text-[10px] text-charcoal-400 dark:text-ink-subtle font-mono">
                       {lang.code.toUpperCase()}
                     </span>
                   )}
